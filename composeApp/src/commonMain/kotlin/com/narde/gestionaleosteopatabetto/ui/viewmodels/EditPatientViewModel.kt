@@ -7,10 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
@@ -48,6 +46,11 @@ class EditPatientViewModel : ViewModel() {
             taxCode = dbPatient.dati_personali?.codice_fiscale ?: "",
             phone = dbPatient.dati_personali?.telefono_paziente ?: "",
             email = dbPatient.dati_personali?.email_paziente ?: "",
+            
+            // Anthropometric measurements
+            height = dbPatient.dati_personali?.altezza?.toString() ?: "",
+            weight = dbPatient.dati_personali?.peso?.toString() ?: "",
+            dominantSide = dbPatient.dati_personali?.latoDominante ?: "",
             
             // Address info
             street = dbPatient.indirizzo?.via ?: "",
@@ -110,6 +113,11 @@ class EditPatientViewModel : ViewModel() {
             PatientField.Phone -> _uiState.value.copy(phone = value)
             PatientField.Email -> _uiState.value.copy(email = value)
             
+            // Anthropometric fields
+            PatientField.Height -> _uiState.value.copy(height = value)
+            PatientField.Weight -> _uiState.value.copy(weight = value)
+            PatientField.DominantSide -> _uiState.value.copy(dominantSide = value)
+            
             // Address fields
             PatientField.Street -> _uiState.value.copy(street = value)
             PatientField.City -> _uiState.value.copy(city = value)
@@ -128,15 +136,6 @@ class EditPatientViewModel : ViewModel() {
         if (_uiState.value.errorMessage.isNotEmpty()) {
             _uiState.value = _uiState.value.copy(errorMessage = "")
         }
-    }
-    
-    /**
-     * Toggle parent section expansion
-     */
-    fun toggleParentSection() {
-        _uiState.value = _uiState.value.copy(
-            isParentSectionExpanded = !_uiState.value.isParentSectionExpanded
-        )
     }
     
     /**
@@ -242,52 +241,6 @@ class EditPatientViewModel : ViewModel() {
 }
 
 /**
- * UI State for Edit Patient screen
- */
-data class EditPatientUiState(
-    // Patient ID (immutable)
-    val patientId: String = "",
-    
-    // Personal Information
-    val firstName: String = "",
-    val lastName: String = "",
-    val birthDate: String = "",
-    val gender: String = "",
-    val placeOfBirth: String = "",
-    val taxCode: String = "",
-    val phone: String = "",
-    val email: String = "",
-    
-    // Address Information
-    val street: String = "",
-    val city: String = "",
-    val zipCode: String = "",
-    val province: String = "",
-    val country: String = "IT",
-    
-    // Parent Information (for minors)
-    val fatherFirstName: String = "",
-    val fatherLastName: String = "",
-    val motherFirstName: String = "",
-    val motherLastName: String = "",
-    val isParentSectionExpanded: Boolean = false,
-    
-    // Calculated fields
-    val age: Int? = null,
-    val isMinor: Boolean = false,
-    
-    // Privacy Consents
-    val treatmentConsent: Boolean = false,
-    val marketingConsent: Boolean = false,
-    val thirdPartyConsent: Boolean = false,
-    
-    // UI State
-    val isUpdating: Boolean = false,
-    val errorMessage: String = "",
-    val isUpdateSuccessful: Boolean = false
-)
-
-/**
  * Extension to convert UI state to database model for update
  */
 private fun EditPatientUiState.toDatabaseModel(databaseUtils: DatabaseUtilsInterface): DatabasePatient {
@@ -306,6 +259,11 @@ private fun EditPatientUiState.toDatabaseModel(databaseUtils: DatabaseUtilsInter
             codiceFiscale = taxCode
             telefonoPaziente = phone
             emailPaziente = this@toDatabaseModel.email
+            
+            // Anthropometric measurements
+            altezza = height.toIntOrNull() ?: 0
+            peso = weight.toDoubleOrNull() ?: 0.0
+            latoDominante = dominantSide
         }
         
         indirizzo?.apply {

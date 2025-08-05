@@ -347,6 +347,88 @@ fun AddPatientScreen(
                     }
             }
             
+            // Anthropometric Measurements Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.anthropometric_measurements),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    // Height and Weight row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.height,
+                            onValueChange = { viewModel.updateField(PatientField.Height, it) },
+                            label = { Text(stringResource(Res.string.height_cm)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .handleTabKeyNavigation()
+                        )
+                        OutlinedTextField(
+                            value = uiState.weight,
+                            onValueChange = { viewModel.updateField(PatientField.Weight, it) },
+                            label = { Text(stringResource(Res.string.weight_kg)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .handleTabKeyNavigation()
+                        )
+                    }
+                    
+                    // Dominant side selection
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.dominant_side),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = uiState.dominantSide == "dx",
+                                    onClick = { viewModel.updateField(PatientField.DominantSide, "dx") }
+                                )
+                                Text(stringResource(Res.string.dominant_side_right))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = uiState.dominantSide == "sx",
+                                    onClick = { viewModel.updateField(PatientField.DominantSide, "sx") }
+                                )
+                                Text(stringResource(Res.string.dominant_side_left))
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Enhanced Address Information Section
             Card(
                 modifier = Modifier.fillMaxWidth(),

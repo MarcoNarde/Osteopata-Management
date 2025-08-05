@@ -30,9 +30,6 @@ import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ConsentType
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -53,18 +50,18 @@ fun PatientDetailsScreen(
     var isEditMode by remember { mutableStateOf(false) }
     val uiState by editViewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
-    
+
     // State for managing current patient data that can be updated after save
     var currentDatabasePatient by remember(databasePatient) { mutableStateOf(databasePatient) }
     var currentUIPatient by remember(patient) { mutableStateOf(patient) }
-    
+
     // Initialize the edit form when database patient is available
     LaunchedEffect(currentDatabasePatient) {
         currentDatabasePatient?.let {
             editViewModel.initializeWithPatient(it)
         }
     }
-    
+
     // Function to reload patient data after successful save
     val reloadPatientData = remember {
         {
@@ -92,7 +89,7 @@ fun PatientDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = if (isEditMode) stringResource(Res.string.edit_patient) else currentUIPatient.name
                     )
@@ -110,10 +107,10 @@ fun PatientDetailsScreen(
                         if (isEditMode) {
                             // Cancel button
                             TextButton(
-                                onClick = { 
+                                onClick = {
                                     isEditMode = false
                                     // Re-initialize with current data
-                                    currentDatabasePatient?.let { 
+                                    currentDatabasePatient?.let {
                                         editViewModel.initializeWithPatient(it)
                                     }
                                 }
@@ -141,6 +138,7 @@ fun PatientDetailsScreen(
                                     uiState.isUpdating -> {
                                         CircularProgressIndicator(modifier = Modifier.size(16.dp))
                                     }
+
                                     uiState.isUpdateSuccessful -> {
                                         Icon(
                                             imageVector = Icons.Default.Check,
@@ -148,6 +146,7 @@ fun PatientDetailsScreen(
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                     }
+
                                     else -> {
                                         Icon(
                                             imageVector = Icons.Default.Check,
@@ -205,7 +204,7 @@ fun PatientDetailsScreen(
                     )
                 }
             }
-            
+
             // Error message
             if (uiState.errorMessage.isNotEmpty()) {
                 Card(
@@ -221,7 +220,7 @@ fun PatientDetailsScreen(
                     )
                 }
             }
-            
+
             if (isEditMode && currentDatabasePatient != null) {
                 EditPatientForm(
                     uiState = uiState,
@@ -258,31 +257,36 @@ private fun ViewPatientInfo(
                 label = stringResource(Res.string.patient_name),
                 value = patient.name
             )
-            
+
             // Calculate and display age properly
-            databasePatient?.dati_personali?.data_nascita?.takeIf { it.isNotEmpty() }?.let { birthDate ->
-                val calculatedAge = calculateAgeFromBirthDate(birthDate)
-                if (calculatedAge > 0) {
-                    PatientInfoRow(
-                        label = stringResource(Res.string.patient_age),
-                        value = calculatedAge.toString()
-                    )
+            databasePatient?.dati_personali?.data_nascita?.takeIf { it.isNotEmpty() }
+                ?.let { birthDate ->
+                    val calculatedAge = calculateAgeFromBirthDate(birthDate)
+                    if (calculatedAge > 0) {
+                        PatientInfoRow(
+                            label = stringResource(Res.string.patient_age),
+                            value = calculatedAge.toString()
+                        )
+                    }
                 }
-            }
-            
+
             // Additional fields from database
             databasePatient?.let { dbPatient ->
                 if (dbPatient.dati_personali?.data_nascita?.isNotEmpty() == true) {
                     PatientInfoRow(
                         label = stringResource(Res.string.birth_date_label),
                         // Convert ISO format from database to Italian format for display
-                        value = DateUtils.convertIsoToItalianFormat(dbPatient.dati_personali?.data_nascita ?: "")
+                        value = DateUtils.convertIsoToItalianFormat(
+                            dbPatient.dati_personali?.data_nascita ?: ""
+                        )
                     )
                 }
                 dbPatient.dati_personali?.sesso?.takeIf { it.isNotEmpty() }?.let {
                     PatientInfoRow(
                         label = stringResource(Res.string.gender),
-                        value = if (it == "M") stringResource(Res.string.gender_male) else stringResource(Res.string.gender_female)
+                        value = if (it == "M") stringResource(Res.string.gender_male) else stringResource(
+                            Res.string.gender_female
+                        )
                     )
                 }
                 dbPatient.dati_personali?.luogo_nascita?.takeIf { it.isNotEmpty() }?.let {
@@ -300,9 +304,44 @@ private fun ViewPatientInfo(
             }
         }
     )
-    
+
     Spacer(modifier = Modifier.height(16.dp))
-    
+
+    // Anthropometric Measurements Section
+    databasePatient?.dati_personali?.let { personalData ->
+        if (personalData.altezza > 0 || personalData.peso > 0.0 || personalData.latoDominante.isNotEmpty()) {
+            PatientInfoSection(
+                title = stringResource(Res.string.anthropometric_measurements),
+                content = {
+                    if (personalData.altezza > 0) {
+                        PatientInfoRow(
+                            label = stringResource(Res.string.height_cm),
+                            value = "${personalData.altezza} cm"
+                        )
+                    }
+                    if (personalData.peso > 0.0) {
+                        PatientInfoRow(
+                            label = stringResource(Res.string.weight_kg),
+                            value = "${personalData.peso} kg"
+                        )
+                    }
+                    if (personalData.latoDominante.isNotEmpty()) {
+                        val dominantSideText = when (personalData.latoDominante) {
+                            "dx" -> stringResource(Res.string.dominant_side_right)
+                            "sx" -> stringResource(Res.string.dominant_side_left)
+                            else -> personalData.latoDominante
+                        }
+                        PatientInfoRow(
+                            label = stringResource(Res.string.dominant_side),
+                            value = dominantSideText
+                        )
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
     // Contact Information Section
     PatientInfoSection(
         title = stringResource(Res.string.contact_information),
@@ -317,41 +356,41 @@ private fun ViewPatientInfo(
             )
         }
     )
-    
+
     Spacer(modifier = Modifier.height(16.dp))
-    
+
     // Address Information Section
     databasePatient?.indirizzo?.let { address ->
-        if (address.via?.isNotEmpty() == true || address.citta?.isNotEmpty() == true ||
-            address.cap?.isNotEmpty() == true || address.provincia?.isNotEmpty() == true) {
+        if (address.via.isNotEmpty() || address.citta.isNotEmpty() || address.cap.isNotEmpty() || address.provincia.isNotEmpty()
+        ) {
             PatientInfoSection(
                 title = stringResource(Res.string.address_information),
                 content = {
-                    address.via?.takeIf { it.isNotEmpty() }?.let {
+                    address.via.takeIf { it.isNotEmpty() }?.let {
                         PatientInfoRow(
                             label = stringResource(Res.string.address_street),
                             value = it
                         )
                     }
-                    address.citta?.takeIf { it.isNotEmpty() }?.let {
+                    address.citta.takeIf { it.isNotEmpty() }?.let {
                         PatientInfoRow(
                             label = stringResource(Res.string.address_city),
                             value = it
                         )
                     }
-                    address.cap?.takeIf { it.isNotEmpty() }?.let {
+                    address.cap.takeIf { it.isNotEmpty() }?.let {
                         PatientInfoRow(
                             label = stringResource(Res.string.address_zip),
                             value = it
                         )
                     }
-                    address.provincia?.takeIf { it.isNotEmpty() }?.let {
+                    address.provincia.takeIf { it.isNotEmpty() }?.let {
                         PatientInfoRow(
                             label = stringResource(Res.string.address_province),
                             value = it
                         )
                     }
-                    address.nazione?.takeIf { it.isNotEmpty() }?.let {
+                    address.nazione.takeIf { it.isNotEmpty() }?.let {
                         PatientInfoRow(
                             label = stringResource(Res.string.address_country),
                             value = it
@@ -362,7 +401,7 @@ private fun ViewPatientInfo(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-    
+
     // Privacy Information Section with disabled checkboxes
     databasePatient?.privacy?.let { privacy ->
         PatientInfoSection(
@@ -384,7 +423,7 @@ private fun ViewPatientInfo(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(vertical = 4.dp)
@@ -400,7 +439,7 @@ private fun ViewPatientInfo(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(vertical = 4.dp)
@@ -416,7 +455,7 @@ private fun ViewPatientInfo(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 // Consent date if available
                 if (privacy.data_consenso.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -425,7 +464,7 @@ private fun ViewPatientInfo(
                         value = privacy.data_consenso
                     )
                 }
-                
+
                 // Privacy notes if available
                 privacy.note_privacy?.takeIf { it.isNotEmpty() }?.let {
                     PatientInfoRow(
@@ -457,9 +496,9 @@ private fun EditPatientForm(
                 label = stringResource(Res.string.patient_id),
                 value = uiState.patientId
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Name fields
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -486,9 +525,9 @@ private fun EditPatientForm(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Birth date and gender
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -505,7 +544,7 @@ private fun EditPatientForm(
                     ),
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 // Gender dropdown
                 var genderExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -514,9 +553,9 @@ private fun EditPatientForm(
                     modifier = Modifier.weight(1f)
                 ) {
                     OutlinedTextField(
-                        value = if (uiState.gender == "M") stringResource(Res.string.male) 
-                               else if (uiState.gender == "F") stringResource(Res.string.female) 
-                               else "",
+                        value = if (uiState.gender == "M") stringResource(Res.string.male)
+                        else if (uiState.gender == "F") stringResource(Res.string.female)
+                        else "",
                         onValueChange = { },
                         readOnly = true,
                         label = { Text(stringResource(Res.string.gender)) },
@@ -544,7 +583,7 @@ private fun EditPatientForm(
                     }
                 }
             }
-            
+
             // Show age if calculated
             if (uiState.age != null) {
                 Text(
@@ -554,9 +593,9 @@ private fun EditPatientForm(
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Place of birth and tax code
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -583,9 +622,9 @@ private fun EditPatientForm(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Phone and email
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -620,9 +659,80 @@ private fun EditPatientForm(
             }
         }
     )
-    
+
     Spacer(modifier = Modifier.height(16.dp))
-    
+
+    // Anthropometric Measurements Section
+    PatientInfoSection(
+        title = stringResource(Res.string.anthropometric_measurements),
+        content = {
+            // Height and Weight row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = uiState.height,
+                    onValueChange = { viewModel.updateField(PatientField.Height, it) },
+                    label = { Text(stringResource(Res.string.height_cm)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = uiState.weight,
+                    onValueChange = { viewModel.updateField(PatientField.Weight, it) },
+                    label = { Text(stringResource(Res.string.weight_kg)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Dominant side selection
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(Res.string.dominant_side),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = uiState.dominantSide == "dx",
+                            onClick = { viewModel.updateField(PatientField.DominantSide, "dx") }
+                        )
+                        Text(stringResource(Res.string.dominant_side_right))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = uiState.dominantSide == "sx",
+                            onClick = { viewModel.updateField(PatientField.DominantSide, "sx") }
+                        )
+                        Text(stringResource(Res.string.dominant_side_left))
+                    }
+                }
+            }
+        }
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
     // Address Information Section
     PatientInfoSection(
         title = stringResource(Res.string.address_information),
@@ -637,9 +747,9 @@ private fun EditPatientForm(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -665,9 +775,9 @@ private fun EditPatientForm(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -695,9 +805,9 @@ private fun EditPatientForm(
             }
         }
     )
-    
+
     Spacer(modifier = Modifier.height(16.dp))
-    
+
     // Privacy Consents Section
     PatientInfoSection(
         title = stringResource(Res.string.privacy_information),
@@ -714,7 +824,7 @@ private fun EditPatientForm(
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
-            
+
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -727,7 +837,7 @@ private fun EditPatientForm(
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
-            
+
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -778,7 +888,7 @@ private fun PatientInfoRow(
     label: String,
     value: String
 ) {
-        if (value.isNotEmpty()) {
+    if (value.isNotEmpty()) {
         Column(
             modifier = Modifier.padding(vertical = 4.dp)
         ) {

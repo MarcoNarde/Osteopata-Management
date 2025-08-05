@@ -6,10 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
@@ -63,6 +59,11 @@ class AddPatientViewModel : ViewModel() {
             PatientField.ZipCode -> _uiState.value.copy(zipCode = value)
             PatientField.Province -> _uiState.value.copy(province = value)
             PatientField.Country -> _uiState.value.copy(country = value)
+            
+            // Anthropometric fields
+            PatientField.Height -> _uiState.value.copy(height = value)
+            PatientField.Weight -> _uiState.value.copy(weight = value)
+            PatientField.DominantSide -> _uiState.value.copy(dominantSide = value)
             
             // Parent fields
             PatientField.FatherFirstName -> _uiState.value.copy(fatherFirstName = value)
@@ -178,77 +179,6 @@ class AddPatientViewModel : ViewModel() {
 }
 
 /**
- * UI State for Add Patient screen
- */
-data class AddPatientUiState(
-    // Personal Information
-    val firstName: String = "",
-    val lastName: String = "",
-    val birthDate: String = "",
-    val gender: String = "",
-    val placeOfBirth: String = "",
-    val taxCode: String = "",
-    val phone: String = "",
-    val email: String = "",
-    
-    // Address Information
-    val street: String = "",
-    val city: String = "",
-    val zipCode: String = "",
-    val province: String = "",
-    val country: String = "IT",
-    
-    // Parent Information (for minors)
-    val fatherFirstName: String = "",
-    val fatherLastName: String = "",
-    val motherFirstName: String = "",
-    val motherLastName: String = "",
-    val isParentSectionExpanded: Boolean = false,
-    
-    // Calculated fields
-    val age: Int? = null,
-    val isMinor: Boolean = false,
-    
-    // Privacy Consents
-    val treatmentConsent: Boolean = false,
-    val marketingConsent: Boolean = false,
-    val thirdPartyConsent: Boolean = false,
-    
-    // UI State
-    val isSaving: Boolean = false,
-    val errorMessage: String = ""
-)
-
-/**
- * Form field types
- */
-enum class PatientField {
-    FirstName, LastName, BirthDate, Gender, PlaceOfBirth, TaxCode, Phone, Email,
-    Street, City, ZipCode, Province, Country,
-    FatherFirstName, FatherLastName, MotherFirstName, MotherLastName
-}
-
-/**
- * Consent types
- */
-enum class ConsentType {
-    Treatment, Marketing, ThirdParty
-}
-
-/**
- * Validation result
- */
-data class ValidationResult(
-    val isValid: Boolean,
-    val errorMessage: String = ""
-) {
-    companion object {
-        fun valid() = ValidationResult(true)
-        fun invalid(message: String) = ValidationResult(false, message)
-    }
-}
-
-/**
  * Extension to convert UI state to database model
  */
 private fun AddPatientUiState.toDatabaseModel(patientCount: Long, databaseUtils: DatabaseUtilsInterface): com.narde.gestionaleosteopatabetto.data.database.models.Patient {
@@ -266,6 +196,11 @@ private fun AddPatientUiState.toDatabaseModel(patientCount: Long, databaseUtils:
             codiceFiscale = taxCode
             telefonoPaziente = phone
             emailPaziente = this@toDatabaseModel.email
+            
+            // Anthropometric measurements
+            altezza = height.toIntOrNull() ?: 0
+            peso = weight.toDoubleOrNull() ?: 0.0
+            latoDominante = dominantSide
         }
         
         indirizzo?.apply {

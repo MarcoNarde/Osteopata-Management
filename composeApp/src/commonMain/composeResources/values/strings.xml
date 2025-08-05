@@ -42,6 +42,15 @@
     <string name="tax_code">Tax Code (Codice Fiscale)</string>
     <string name="phone_number">Phone Number</string>
     <string name="email">Email</string>
+    
+    <!-- Anthropometric measurements -->
+    <string name="anthropometric_measurements">Anthropometric Measurements</string>
+    <string name="height_cm">Height (cm)</string>
+    <string name="weight_kg">Weight (kg)</string>
+    <string name="dominant_side">Dominant Side</string>
+    <string name="dominant_side_right">Right (DX)</string>
+    <string name="dominant_side_left">Left (SX)</string>
+    
     <string name="street_address">Street Address</string>
     <string name="city">City</string>
     <string name="zip_code">ZIP Code</string>
