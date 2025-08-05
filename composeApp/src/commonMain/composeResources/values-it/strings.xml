@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Application -->
+    <string name="app_title">Sistema di Gestione Osteopata</string>
+    
+    <!-- Navigation -->
+    <string name="tab_patients">Pazienti</string>
+    <string name="tab_visits">Visite</string>
+    
+    <!-- Patients Screen -->
+    <string name="patients_title">Lista Pazienti</string>
+    <string name="patient_phone">Telefono: %1$s</string>
+    <string name="patient_email">Email: %1$s</string>
+    <string name="patient_age">Età: %1$s anni</string>
+    
+    <!-- Visits Screen -->
+    <string name="visits_title">Programma Visite</string>
+    <string name="visit_date">Data: %1$s</string>
+    <string name="visit_time">Ora: %1$s</string>
+    <string name="visit_notes">Note: %1$s</string>
+    
+    <!-- Visit Status -->
+    <string name="status_scheduled">Programmata</string>
+    <string name="status_completed">Completata</string>
+    <string name="status_cancelled">Annullata</string>
+    
+    <!-- Common UI -->
+    <string name="loading_patients">Caricamento pazienti...</string>
+    <string name="add_patient">Aggiungi Paziente</string>
+    <string name="back">Indietro</string>
+    
+    <!-- Add Patient Screen -->
+    <string name="add_new_patient">Aggiungi Nuovo Paziente</string>
+    <string name="personal_information">Informazioni Personali</string>
+    <string name="first_name">Nome*</string>
+    <string name="last_name">Cognome*</string>
+    <string name="birth_date">Data di Nascita (GG/MM/AAAA)</string>
+    <string name="birth_date_placeholder">15/03/1985</string>
+    <string name="male">Maschio</string>
+    <string name="female">Femmina</string>
+    <string name="place_of_birth">Luogo di Nascita</string>
+    <string name="tax_code">Codice Fiscale</string>
+    <string name="phone_number">Numero di Telefono</string>
+    <string name="email">Email</string>
+    <string name="street_address">Indirizzo</string>
+    <string name="city">Città</string>
+    <string name="zip_code">CAP</string>
+    <string name="province">Provincia</string>
+    <string name="country">Paese</string>
+    <string name="father_first_name">Nome del Padre</string>
+    <string name="father_last_name">Cognome del Padre</string>
+    <string name="mother_first_name">Nome della Madre</string>
+    <string name="mother_last_name">Cognome della Madre</string>
+    
+    <!-- Patient Details Screen -->
+    <string name="patient_id">ID Paziente</string>
+    <string name="patient_name">Nome Completo</string>
+    <string name="contact_information">Informazioni di Contatto</string>
+    <string name="medical_information">Informazioni Mediche</string>
+    <string name="no_medical_info_available">Nessuna informazione medica disponibile</string>
+    <string name="year">anno</string>
+    <string name="years">anni</string>
+    <string name="address_information">Informazioni Indirizzo</string>
+    <string name="birth_date_label">Data di Nascita</string>
+    <string name="gender">Sesso</string>
+    <string name="gender_male">Maschio</string>
+    <string name="gender_female">Femmina</string>
+    <string name="place_of_birth_label">Luogo di Nascita</string>
+    <string name="tax_code_label">Codice Fiscale</string>
+    <string name="address_street">Via</string>
+    <string name="address_city">Città</string>
+    <string name="address_zip">CAP</string>
+    <string name="address_province">Provincia</string>
+    <string name="address_country">Paese</string>
+    <string name="address_type">Tipo Indirizzo</string>
+    <string name="parents_information">Informazioni Genitori</string>
+    <string name="parent_information_minor">Informazioni Genitori (Minore: Età %1$s)</string>
+    <string name="patient_is_minor">Il paziente è minorenne (sotto i 18 anni)</string>
+    <string name="father_info">Padre</string>
+    <string name="mother_info">Madre</string>
+    <string name="doctor_information">Medico di Famiglia</string>
+    <string name="privacy_information">Privacy e Consensi</string>
+    <string name="privacy_treatment_consent">Consenso al Trattamento</string>
+    <string name="privacy_data_processing">Consenso Trattamento Dati</string>
+    <string name="privacy_marketing_consent">Consenso Marketing</string>
+    <string name="privacy_third_party_consent">Consenso Terze Parti</string>
+    <string name="privacy_consent_date">Data del Consenso</string>
+    <string name="privacy_notes">Note Privacy</string>
+    
+    <!-- Privacy consent statements -->
+    <string name="privacy_treatment_consent_statement">Acconsento al trattamento dei miei dati personali per cure mediche*</string>
+    <string name="privacy_marketing_consent_statement">Acconsento a ricevere comunicazioni di marketing</string>
+    <string name="privacy_third_party_consent_statement">Acconsento alla condivisione dei dati con terze parti</string>
+    
+    <!-- Save patient button -->
+    <string name="save_patient">Salva Paziente</string>
+    <string name="saving">Salvando...</string>
+    
+    <!-- Edit patient -->
+    <string name="edit_patient">Modifica Paziente</string>
+    <string name="cancel_edit">Annulla</string>
+    <string name="save_changes">Salva Modifiche</string>
+    <string name="updating">Aggiornando...</string>
+    <string name="patient_updated_success">Paziente aggiornato con successo</string>
+    <string name="patient_update_success_message">✅ Informazioni paziente salvate con successo!</string>
+    <string name="edit_mode">Modalità Modifica</string>
+    <string name="view_mode">Modalità Visualizzazione</string>
+    
+    <!-- Delete patient -->
+    <string name="delete_patient">Elimina Paziente</string>
+    <string name="delete_patient_confirmation_title">Elimina Paziente</string>
+    <string name="delete_patient_confirmation_message">Sei sicuro di voler eliminare questo paziente? Questa azione non può essere annullata.</string>
+    <string name="delete_patient_confirm">Elimina</string>
+    <string name="delete_patient_cancel">Annulla</string>
+    <string name="patient_deleted_success">Paziente eliminato con successo</string>
+    <string name="patient_label">Paziente</string>
+</resources>
