@@ -2,7 +2,6 @@ package com.narde.gestionaleosteopatabetto.data.database.utils
 
 import com.narde.gestionaleosteopatabetto.data.database.models.*
 import com.narde.gestionaleosteopatabetto.data.model.Patient as UIPatient
-import com.narde.gestionaleosteopatabetto.utils.DateUtils
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -104,7 +103,8 @@ class DatabaseUtils : DatabaseUtilsInterface {
             name = "${databasePatient.datiPersonali?.nome ?: ""} ${databasePatient.datiPersonali?.cognome ?: ""}".trim(),
             phone = databasePatient.datiPersonali?.telefonoPaziente ?: "",
             email = databasePatient.datiPersonali?.emailPaziente ?: "",
-            age = age
+            age = age,
+            bmi = databasePatient.datiPersonali?.bmi
         )
     }
 }

@@ -50,6 +50,7 @@ class EditPatientViewModel : ViewModel() {
             // Anthropometric measurements
             height = dbPatient.dati_personali?.altezza?.toString() ?: "",
             weight = dbPatient.dati_personali?.peso?.toString() ?: "",
+            bmi = dbPatient.dati_personali?.bmi?.toString() ?: "",
             dominantSide = dbPatient.dati_personali?.latoDominante ?: "",
             
             // Address info
@@ -116,6 +117,7 @@ class EditPatientViewModel : ViewModel() {
             // Anthropometric fields
             PatientField.Height -> _uiState.value.copy(height = value)
             PatientField.Weight -> _uiState.value.copy(weight = value)
+            PatientField.BMI -> _uiState.value.copy(bmi = value)
             PatientField.DominantSide -> _uiState.value.copy(dominantSide = value)
             
             // Address fields
@@ -263,6 +265,7 @@ private fun EditPatientUiState.toDatabaseModel(databaseUtils: DatabaseUtilsInter
             // Anthropometric measurements
             altezza = height.toIntOrNull() ?: 0
             peso = weight.toDoubleOrNull() ?: 0.0
+            bmi = this@toDatabaseModel.bmi.toDoubleOrNull() // BMI can be null
             latoDominante = dominantSide
         }
         

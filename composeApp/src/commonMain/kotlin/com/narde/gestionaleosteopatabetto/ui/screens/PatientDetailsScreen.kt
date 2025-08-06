@@ -701,6 +701,24 @@ private fun EditPatientForm(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // BMI field
+            OutlinedTextField(
+                value = uiState.bmi,
+                onValueChange = { viewModel.updateField(PatientField.BMI, it) },
+                label = { Text(stringResource(Res.string.bmi)) },
+                placeholder = { Text(stringResource(Res.string.bmi_placeholder)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Dominant side selection
             Column(
                 modifier = Modifier.fillMaxWidth()

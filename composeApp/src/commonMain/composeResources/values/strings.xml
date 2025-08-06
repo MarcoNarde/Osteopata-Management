@@ -47,6 +47,9 @@
     <string name="anthropometric_measurements">Anthropometric Measurements</string>
     <string name="height_cm">Height (cm)</string>
     <string name="weight_kg">Weight (kg)</string>
+    <string name="bmi">BMI</string>
+    <string name="bmi_placeholder">Enter BMI value</string>
+    <string name="patient_bmi">BMI: %1$s</string>
     <string name="dominant_side">Dominant Side</string>
     <string name="dominant_side_right">Right (DX)</string>
     <string name="dominant_side_left">Left (SX)</string>

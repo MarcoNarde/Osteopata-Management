@@ -20,7 +20,8 @@ class WasmDatabaseUtils : DatabaseUtilsInterface {
                 luogoNascita = "Roma",
                 sesso = "M",
                 telefono = "123-456-7890",
-                email = "marco.rossi@example.com"
+                email = "marco.rossi@example.com",
+                bmi = 24.5 // Sample BMI value
             ),
             indirizzo = Indirizzo(
                 via = "Via Roma 123",

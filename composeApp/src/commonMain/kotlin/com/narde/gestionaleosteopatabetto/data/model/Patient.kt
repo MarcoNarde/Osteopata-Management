@@ -9,5 +9,6 @@ data class Patient(
     val name: String,
     val phone: String,
     val email: String,
-    val age: Int
+    val age: Int,
+    val bmi: Double? = null // Body Mass Index - can be null if not calculated
 ) 

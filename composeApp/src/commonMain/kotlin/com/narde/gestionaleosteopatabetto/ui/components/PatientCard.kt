@@ -107,6 +107,15 @@ fun PatientCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                
+                // Display BMI if available
+                patient.bmi?.let { bmiValue ->
+                    Text(
+                        text = stringResource(Res.string.patient_bmi, bmiValue.toString()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             
             // Delete button

@@ -17,6 +17,7 @@ data class AddPatientUiState(
     // Anthropometric measurements
     val height: String = "", // Height in centimeters
     val weight: String = "", // Weight in kilograms
+    val bmi: String = "", // Body Mass Index
     val dominantSide: String = "", // Dominant side: "sx" for left, "dx" for right
     
     // Address Information
@@ -67,6 +68,7 @@ data class EditPatientUiState(
     // Anthropometric measurements
     val height: String = "", // Height in centimeters
     val weight: String = "", // Weight in kilograms
+    val bmi: String = "", // Body Mass Index
     val dominantSide: String = "", // Dominant side: "sx" for left, "dx" for right
     
     // Address Information
@@ -103,7 +105,7 @@ data class EditPatientUiState(
  */
 enum class PatientField {
     FirstName, LastName, BirthDate, Gender, PlaceOfBirth, TaxCode, Phone, Email,
-    Height, Weight, DominantSide, // Anthropometric fields
+    Height, Weight, BMI, DominantSide, // Anthropometric fields
     Street, City, ZipCode, Province, Country,
     FatherFirstName, FatherLastName, MotherFirstName, MotherLastName
 }

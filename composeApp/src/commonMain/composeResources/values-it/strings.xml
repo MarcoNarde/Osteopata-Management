@@ -47,6 +47,9 @@
     <string name="anthropometric_measurements">Misure Antropometriche</string>
     <string name="height_cm">Altezza (cm)</string>
     <string name="weight_kg">Peso (kg)</string>
+    <string name="bmi">IMC</string>
+    <string name="bmi_placeholder">Inserisci valore IMC</string>
+    <string name="patient_bmi">IMC: %1$s</string>
     <string name="dominant_side">Lato Dominante</string>
     <string name="dominant_side_right">Destro (DX)</string>
     <string name="dominant_side_left">Sinistro (SX)</string>

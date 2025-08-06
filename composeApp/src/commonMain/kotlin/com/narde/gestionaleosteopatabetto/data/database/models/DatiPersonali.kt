@@ -23,5 +23,6 @@ class DatiPersonali : RealmObject {
     // Anthropometric measurements
     var altezza: Int = 0 // Height in centimeters
     var peso: Double = 0.0 // Weight in kilograms
+    var bmi: Double? = null // Body Mass Index - can be null if not calculated
     var latoDominante: String = "" // Dominant side: "sx" for left, "dx" for right
 }

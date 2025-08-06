@@ -15,10 +15,10 @@ object SampleData {
      * Sample patients list for testing the application
      */
     val patients = listOf(
-        Patient("1", "Mario Rossi", "+39 123 456 7890", "mario.rossi@email.com", 45),
-        Patient("2", "Anna Bianchi", "+39 098 765 4321", "anna.bianchi@email.com", 32),
-        Patient("3", "Giuseppe Verdi", "+39 555 123 4567", "giuseppe.verdi@email.com", 58),
-        Patient("4", "Maria Neri", "+39 333 987 6543", "maria.neri@email.com", 29)
+        Patient("1", "Mario Rossi", "+39 123 456 7890", "mario.rossi@email.com", 45, 24.5), // BMI included
+        Patient("2", "Anna Bianchi", "+39 098 765 4321", "anna.bianchi@email.com", 32, 21.8), // BMI included
+        Patient("3", "Giuseppe Verdi", "+39 555 123 4567", "giuseppe.verdi@email.com", 58), // BMI null
+        Patient("4", "Maria Neri", "+39 333 987 6543", "maria.neri@email.com", 29, 26.3) // BMI included
     )
     
     /**

@@ -63,6 +63,7 @@ class AddPatientViewModel : ViewModel() {
             // Anthropometric fields
             PatientField.Height -> _uiState.value.copy(height = value)
             PatientField.Weight -> _uiState.value.copy(weight = value)
+            PatientField.BMI -> _uiState.value.copy(bmi = value)
             PatientField.DominantSide -> _uiState.value.copy(dominantSide = value)
             
             // Parent fields
@@ -200,6 +201,7 @@ private fun AddPatientUiState.toDatabaseModel(patientCount: Long, databaseUtils:
             // Anthropometric measurements
             altezza = height.toIntOrNull() ?: 0
             peso = weight.toDoubleOrNull() ?: 0.0
+            bmi = this@toDatabaseModel.bmi.toDoubleOrNull() // BMI can be null
             latoDominante = dominantSide
         }
         
