@@ -1,6 +1,7 @@
 package com.narde.gestionaleosteopatabetto.data.database.utils
 
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient
+import com.narde.gestionaleosteopatabetto.data.database.models.StoriaClinica
 import com.narde.gestionaleosteopatabetto.data.model.Patient as UIPatient
 
 /**
@@ -27,4 +28,9 @@ interface DatabaseUtilsInterface {
      * Convert database patient to UI patient
      */
     fun toUIPatient(databasePatient: Patient): UIPatient
+    
+    /**
+     * Create clinical history data from JSON structure
+     */
+    fun createSampleClinicalHistory(): StoriaClinica
 }

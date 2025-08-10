@@ -107,6 +107,81 @@ class DatabaseUtils : DatabaseUtilsInterface {
             bmi = databasePatient.datiPersonali?.bmi
         )
     }
+    
+    /**
+     * Create clinical history data from JSON structure
+     * This function creates a sample clinical history based on the provided JSON structure
+     */
+    override fun createSampleClinicalHistory(): StoriaClinica {
+        return StoriaClinica().apply {
+            // Chronic conditions
+            patologieCroniche = PatologieCroniche().apply {
+                allergieFarmaci = AllergieFarmaci().apply {
+                    presente = true
+                    // Note: In a real Realm implementation, this would be initialized by the database
+                    // For sample data, we'll leave it as null and handle it in the actual database operations
+                }
+                diabete = Diabete().apply {
+                    presente = true
+                    tipologia = "2"
+                }
+                ipertiroidismo = false
+                cardiopatia = false
+                ipertensioneArteriosa = true
+                
+                // Note: In a real Realm implementation, these lists would be initialized by the database
+                // For sample data, we'll leave them as null and handle them in the actual database operations
+            }
+            
+            // Lifestyle factors
+            stileVita = StileVita().apply {
+                tabagismo = Tabagismo().apply {
+                    stato = "<10"
+                    sigaretteGiorno = 5
+                    anniFumo = 3
+                }
+                lavoro = "sedentario"
+                professione = "Programmatore informatico"
+                oreLavoroGiorno = 8
+                attivitaSportiva = AttivitaSportiva().apply {
+                    presente = true
+                    // Note: In a real Realm implementation, the sport list would be initialized by the database
+                    // For sample data, we'll leave it as null and handle it in the actual database operations
+                    frequenza = "settimanale"
+                    intensita = "media"
+                }
+            }
+            
+            // Note: In a real Realm implementation, these lists would be initialized by the database
+            // For sample data, we'll leave them as null and handle them in the actual database operations
+            
+            // Pediatric history
+            anamnesiPediatrica = AnamnesiPediatrica().apply {
+                gravidanza = Gravidanza().apply {
+                    complicazioni = false
+                    note = ""
+                }
+                parto = Parto().apply {
+                    tipo = "naturale"
+                    complicazioni = false
+                    pesoNascitaGrammi = 3200
+                    punteggioApgar5min = 9
+                    note = ""
+                }
+                sviluppo = Sviluppo().apply {
+                    primiPassiMesi = 12
+                    primeParoleMesi = 11
+                    problemiSviluppo = false
+                    note = ""
+                }
+                
+                // Note: In a real Realm implementation, this list would be initialized by the database
+                // For sample data, we'll leave it as null and handle it in the actual database operations
+                
+                noteGenerali = "Sviluppo nella norma, nessuna particolare problematica"
+            }
+        }
+    }
 }
 
 /**

@@ -5,7 +5,8 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 
 /**
  * Patient database model for Realm
- * Represents a patient with personal data, address, privacy settings, and family information
+ * Represents a patient with personal data, address, privacy settings, family information,
+ * and comprehensive clinical history
  */
 class Patient : RealmObject {
     @PrimaryKey
@@ -15,4 +16,5 @@ class Patient : RealmObject {
     var privacy: Privacy? = null
     var genitori: Genitori? = null
     var medicocurante: MedicoCurante? = null
+    var storiaClinica: StoriaClinica? = null
 }

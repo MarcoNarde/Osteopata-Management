@@ -38,8 +38,12 @@ object DatabaseInitializer {
             if (patientCount == 0L) {
                 println("📝 Database is empty - Adding sample patient for development")
                 val samplePatient = _databaseUtils.createSamplePatient()
+                
+                // Add clinical history to the sample patient
+                samplePatient.storiaClinica = _databaseUtils.createSampleClinicalHistory()
+                
                 repo.savePatient(samplePatient)
-                println("✅ Added sample patient: ${samplePatient.datiPersonali?.nome} ${samplePatient.datiPersonali?.cognome}")
+                println("✅ Added sample patient with clinical history: ${samplePatient.datiPersonali?.nome} ${samplePatient.datiPersonali?.cognome}")
             }
         }
     }

@@ -24,15 +24,32 @@ object RealmConfig {
                 Genitori::class,
                 Padre::class,
                 Madre::class,
-                MedicoCurante::class
+                MedicoCurante::class,
+                // Clinical history models
+                StoriaClinica::class,
+                PatologieCroniche::class,
+                AllergieFarmaci::class,
+                Diabete::class,
+                AltraPatologia::class,
+                StileVita::class,
+                Tabagismo::class,
+                AttivitaSportiva::class,
+                TerapiaFarmacologica::class,
+                InterventoTrauma::class,
+                EsameStrumentale::class,
+                AnamnesiPediatrica::class,
+                Gravidanza::class,
+                Parto::class,
+                Sviluppo::class,
+                ProblemaSignificativo::class
             )
         )
         .name("gestionale_osteopata.realm") // Database file name
-        .schemaVersion(2) // Incremented schema version to handle changes
+        .schemaVersion(3) // Incremented schema version to handle clinical history changes
         .deleteRealmIfMigrationNeeded() // Delete old database if migration is required
         .build()
         
-        println("RealmConfig: Initializing Realm database with schema version 2")
+        println("RealmConfig: Initializing Realm database with schema version 3")
         Realm.open(config)
     }
     
