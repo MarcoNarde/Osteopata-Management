@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -30,6 +29,10 @@ import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientField
 import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ConsentType
+import com.narde.gestionaleosteopatabetto.ui.factories.rememberAddPatientViewModel
+import com.narde.gestionaleosteopatabetto.ui.mvi.AddPatientSideEffect
+import com.narde.gestionaleosteopatabetto.ui.mvi.AddPatientEvent
+import com.narde.gestionaleosteopatabetto.ui.mvi.SideEffect
 
 /**
  * Helper function to handle TAB key navigation for desktop
@@ -151,10 +154,44 @@ private fun FormSection(
 fun AddPatientScreen(
     onBackClick: () -> Unit,
     onPatientSaved: () -> Unit,
-    viewModel: AddPatientViewModel = viewModel()
+    viewModel: AddPatientViewModel = rememberAddPatientViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val sideEffects by viewModel.sideEffects.collectAsState(initial = null)
     val focusManager = LocalFocusManager.current
+    
+    // Handle MVI side effects
+    LaunchedEffect(sideEffects) {
+        sideEffects?.let { effect ->
+            when (effect) {
+                is AddPatientSideEffect.PatientSaved -> {
+                    onPatientSaved()
+                }
+                is AddPatientSideEffect.ValidationError -> {
+                    // Error is already handled in the state, this is for additional side effects
+                }
+                AddPatientSideEffect.SavingStarted -> {
+                    // Additional handling if needed
+                }
+                AddPatientSideEffect.SavingCompleted -> {
+                    // Additional handling if needed
+                }
+                // Base SideEffect cases
+                SideEffect.NavigateBack -> {
+                    onBackClick()
+                }
+                is SideEffect.NavigateTo -> {
+                    // Handle navigation if needed
+                }
+                is SideEffect.ShowError -> {
+                    // Error is already handled in the state
+                }
+                is SideEffect.ShowMessage -> {
+                    // Handle message display if needed
+                }
+            }
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -747,7 +784,10 @@ fun AddPatientScreen(
                     .fillMaxWidth()
                     .height(56.dp)
                     .handleTabKeyNavigation(),
-                onClick = { viewModel.savePatient(onPatientSaved) },
+                onClick = { 
+                    // Use MVI pattern - send event instead of calling method directly
+                    viewModel.sendIntent(AddPatientEvent.SavePatient)
+                },
                 enabled = !uiState.isSaving,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,

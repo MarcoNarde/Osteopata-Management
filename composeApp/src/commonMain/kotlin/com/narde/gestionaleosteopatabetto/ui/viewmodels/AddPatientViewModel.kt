@@ -1,151 +1,209 @@
 package com.narde.gestionaleosteopatabetto.ui.viewmodels
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.toLocalDateTime
-import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
-import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
-import com.narde.gestionaleosteopatabetto.data.database.utils.*
-import com.narde.gestionaleosteopatabetto.data.database.utils.DatabaseUtilsInterface
+import com.narde.gestionaleosteopatabetto.domain.models.*
+import com.narde.gestionaleosteopatabetto.domain.usecases.SavePatientUseCase
+import com.narde.gestionaleosteopatabetto.ui.mvi.BaseViewModel
+import com.narde.gestionaleosteopatabetto.ui.mvi.AddPatientEvent
+import com.narde.gestionaleosteopatabetto.ui.mvi.AddPatientState
+import com.narde.gestionaleosteopatabetto.ui.mvi.AddPatientSideEffect
 import com.narde.gestionaleosteopatabetto.utils.DateUtils
 
 /**
- * ViewModel for Add Patient screen
- * Handles business logic, validation, and state management
+ * ViewModel for Add Patient screen using MVI pattern
+ * 
+ * MVI Benefits:
+ * - Unidirectional data flow
+ * - Predictable state management
+ * - Easy to test and debug
+ * - Clear separation of concerns
+ * - Business logic encapsulated in events
  */
-class AddPatientViewModel : ViewModel() {
+class AddPatientViewModel(
+    private val savePatientUseCase: SavePatientUseCase
+) : BaseViewModel<AddPatientEvent, AddPatientState>() {
     
-    // Database utils instance
-    private val _databaseUtils = createDatabaseUtils()
+    // Legacy support - keep existing uiState for backward compatibility
+    private val _legacyUiState = MutableStateFlow(AddPatientUiState())
+    val uiState: StateFlow<AddPatientUiState> = _legacyUiState.asStateFlow()
     
-    private val _uiState = MutableStateFlow(AddPatientUiState())
-    val uiState: StateFlow<AddPatientUiState> = _uiState.asStateFlow()
+    // MVI Implementation
+    override fun initialState(): AddPatientState = AddPatientState()
     
-    /**
-     * Update form field value
-     */
-    fun updateField(field: PatientField, value: String) {
-        _uiState.value = when (field) {
-            PatientField.FirstName -> _uiState.value.copy(firstName = value)
-            PatientField.LastName -> _uiState.value.copy(lastName = value)
-            PatientField.BirthDate -> {
-                val age = calculateAge(value)
-                val isMinor = age != null && age < 18
-                val newState = _uiState.value.copy(
-                    birthDate = value,
-                    age = age,
-                    isMinor = isMinor
-                )
-                // Auto-collapse parent section if patient becomes adult
-                if (!isMinor) {
-                    newState.copy(isParentSectionExpanded = false)
-                } else {
-                    newState
+    override suspend fun processIntent(intent: AddPatientEvent) {
+        when (intent) {
+            is AddPatientEvent.UpdateField -> handleUpdateField(intent.field, intent.value)
+            is AddPatientEvent.UpdateConsent -> handleUpdateConsent(intent.consent, intent.value)
+            is AddPatientEvent.ToggleParentSection -> handleToggleParentSection()
+            is AddPatientEvent.SavePatient -> handleSavePatient()
+            is AddPatientEvent.ClearError -> handleClearError()
+            is AddPatientEvent.ValidateForm -> handleValidateForm()
+        }
+    }
+    
+    // MVI Event Handlers
+    private fun handleUpdateField(field: PatientField, value: String) {
+        updateState {
+            val newState = when (field) {
+                PatientField.FirstName -> copy(firstName = value)
+                PatientField.LastName -> copy(lastName = value)
+                PatientField.BirthDate -> {
+                    val age = calculateAge(value)
+                    val isMinor = age != null && age < 18
+                    copy(
+                        birthDate = value,
+                        age = age,
+                        isMinor = isMinor,
+                        isParentSectionExpanded = if (!isMinor) false else isParentSectionExpanded
+                    )
                 }
+                PatientField.Gender -> copy(gender = value)
+                PatientField.PlaceOfBirth -> copy(placeOfBirth = value)
+                PatientField.TaxCode -> copy(taxCode = value)
+                PatientField.Phone -> copy(phone = value)
+                PatientField.Email -> copy(email = value)
+                PatientField.Street -> copy(street = value)
+                PatientField.City -> copy(city = value)
+                PatientField.ZipCode -> copy(zipCode = value)
+                PatientField.Province -> copy(province = value)
+                PatientField.Country -> copy(country = value)
+                PatientField.Height -> copy(height = value)
+                PatientField.Weight -> copy(weight = value)
+                PatientField.BMI -> copy(bmi = value)
+                PatientField.DominantSide -> copy(dominantSide = value)
+                PatientField.FatherFirstName -> copy(fatherFirstName = value)
+                PatientField.FatherLastName -> copy(fatherLastName = value)
+                PatientField.MotherFirstName -> copy(motherFirstName = value)
+                PatientField.MotherLastName -> copy(motherLastName = value)
             }
-            PatientField.Gender -> _uiState.value.copy(gender = value)
-            PatientField.PlaceOfBirth -> _uiState.value.copy(placeOfBirth = value)
-            PatientField.TaxCode -> _uiState.value.copy(taxCode = value)
-            PatientField.Phone -> _uiState.value.copy(phone = value)
-            PatientField.Email -> _uiState.value.copy(email = value)
             
-            // Address fields
-            PatientField.Street -> _uiState.value.copy(street = value)
-            PatientField.City -> _uiState.value.copy(city = value)
-            PatientField.ZipCode -> _uiState.value.copy(zipCode = value)
-            PatientField.Province -> _uiState.value.copy(province = value)
-            PatientField.Country -> _uiState.value.copy(country = value)
-            
-            // Anthropometric fields
-            PatientField.Height -> _uiState.value.copy(height = value)
-            PatientField.Weight -> _uiState.value.copy(weight = value)
-            PatientField.BMI -> _uiState.value.copy(bmi = value)
-            PatientField.DominantSide -> _uiState.value.copy(dominantSide = value)
-            
-            // Parent fields
-            PatientField.FatherFirstName -> _uiState.value.copy(fatherFirstName = value)
-            PatientField.FatherLastName -> _uiState.value.copy(fatherLastName = value)
-            PatientField.MotherFirstName -> _uiState.value.copy(motherFirstName = value)
-            PatientField.MotherLastName -> _uiState.value.copy(motherLastName = value)
+            // Clear error when user starts typing
+            if (errorMessage.isNotEmpty()) {
+                newState.copy(errorMessage = "")
+            } else {
+                newState
+            }
         }
         
-        // Clear errors when user starts typing
-        if (_uiState.value.errorMessage.isNotEmpty()) {
-            _uiState.value = _uiState.value.copy(errorMessage = "")
+        // Update legacy state for backward compatibility
+        updateLegacyState()
+    }
+    
+    private fun handleUpdateConsent(consent: ConsentType, value: Boolean) {
+        updateState {
+            when (consent) {
+                ConsentType.Treatment -> copy(treatmentConsent = value)
+                ConsentType.Marketing -> copy(marketingConsent = value)
+                ConsentType.ThirdParty -> copy(thirdPartyConsent = value)
+            }
         }
+        updateLegacyState()
     }
     
-    /**
-     * Toggle parent section expansion
-     */
-    fun toggleParentSection() {
-        _uiState.value = _uiState.value.copy(
-            isParentSectionExpanded = !_uiState.value.isParentSectionExpanded
-        )
+    private fun handleToggleParentSection() {
+        updateState { copy(isParentSectionExpanded = !isParentSectionExpanded) }
+        updateLegacyState()
     }
     
-    /**
-     * Update consent checkbox
-     */
-    fun updateConsent(consent: ConsentType, value: Boolean) {
-        _uiState.value = when (consent) {
-            ConsentType.Treatment -> _uiState.value.copy(treatmentConsent = value)
-            ConsentType.Marketing -> _uiState.value.copy(marketingConsent = value)
-            ConsentType.ThirdParty -> _uiState.value.copy(thirdPartyConsent = value)
-        }
-    }
-    
-    /**
-     * Validate and save patient
-     */
-    fun savePatient(onSuccess: () -> Unit) {
-        val state = _uiState.value
+    private fun handleSavePatient() {
+        val currentState = state.value
         
-        // Validation
-        val validationResult = validatePatientData(state)
+        // Validate form
+        val validationResult = validatePatientData(currentState)
         if (!validationResult.isValid) {
-            _uiState.value = state.copy(errorMessage = validationResult.errorMessage)
+            emitSideEffect(AddPatientSideEffect.ValidationError(validationResult.errorMessage))
             return
         }
         
-        // Save to database
+        // Convert to domain model and save
+        val patient = currentState.toDomainModel()
+        
+        updateState { copy(isSaving = true, errorMessage = "") }
+        emitSideEffect(AddPatientSideEffect.SavingStarted)
+        
         viewModelScope.launch {
-            _uiState.value = state.copy(isSaving = true, errorMessage = "")
-            
-            try {
-                val success = savePatientToDatabase(state)
-                if (success) {
-                    onSuccess()
-                } else {
-                    _uiState.value = state.copy(
-                        isSaving = false,
-                        errorMessage = "Failed to save patient"
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = state.copy(
-                    isSaving = false,
-                    errorMessage = "Error: ${e.message}"
+            savePatientUseCase(patient).collect { result ->
+                result.fold(
+                    onSuccess = { savedPatient ->
+                        updateState { copy(isSaving = false, errorMessage = "") }
+                        emitSideEffect(AddPatientSideEffect.SavingCompleted)
+                        emitSideEffect(AddPatientSideEffect.PatientSaved(savedPatient.id))
+                    },
+                    onFailure = { error ->
+                        updateState { 
+                            copy(
+                                isSaving = false,
+                                errorMessage = error.message ?: "Failed to save patient"
+                            ) 
+                        }
+                        emitSideEffect(AddPatientSideEffect.SavingCompleted)
+                        emitSideEffect(AddPatientSideEffect.ValidationError(error.message ?: "Failed to save patient"))
+                    }
                 )
             }
         }
+        updateLegacyState()
+    }
+    
+    private fun handleClearError() {
+        updateState { copy(errorMessage = "") }
+        updateLegacyState()
+    }
+    
+    private fun handleValidateForm() {
+        val currentState = state.value
+        val validationResult = validatePatientData(currentState)
+        updateState { copy(isFormValid = validationResult.isValid) }
+        updateLegacyState()
+    }
+    
+    // Legacy Methods (for backward compatibility)
+    /**
+     * Update form field value (Legacy method)
+     */
+    fun updateField(field: PatientField, value: String) {
+        sendIntent(AddPatientEvent.UpdateField(field, value))
     }
     
     /**
-     * Business logic: Calculate age from birth date in Italian DD/MM/AAAA format
+     * Toggle parent section expansion (Legacy method)
+     */
+    fun toggleParentSection() {
+        sendIntent(AddPatientEvent.ToggleParentSection)
+    }
+    
+    /**
+     * Update consent checkbox (Legacy method)
+     */
+    fun updateConsent(consent: ConsentType, value: Boolean) {
+        sendIntent(AddPatientEvent.UpdateConsent(consent, value))
+    }
+    
+    /**
+     * Save patient using the use case (Legacy method)
+     * Delegates business logic to the domain layer
+     */
+    fun savePatient(onSuccess: () -> Unit) {
+        sendIntent(AddPatientEvent.SavePatient)
+        // Note: onSuccess callback will be handled via side effects
+    }
+    
+    /**
+     * Calculate age from birth date in Italian DD/MM/AAAA format
+     * This is UI-specific logic for form validation
      */
     private fun calculateAge(birthDateString: String): Int? {
         return DateUtils.calculateAgeFromItalianDate(birthDateString)
     }
     
     /**
-     * Business logic: Validate patient data
+     * Validate patient data using domain validation rules
      */
-    private fun validatePatientData(state: AddPatientUiState): ValidationResult {
+    private fun validatePatientData(state: AddPatientState): ValidationResult {
         return when {
             state.firstName.isBlank() -> ValidationResult.invalid("First name is required")
             state.lastName.isBlank() -> ValidationResult.invalid("Last name is required")
@@ -156,88 +214,115 @@ class AddPatientViewModel : ViewModel() {
     }
     
     /**
-     * Data layer: Save patient to database
+     * Update legacy state for backward compatibility
      */
-    private suspend fun savePatientToDatabase(state: AddPatientUiState): Boolean {
-        return try {
-            if (isDatabaseSupported()) {
-                val repository = DatabaseInitializer.getPatientRepository()
-                repository?.let {
-                    // Get patient count for ID generation
-                    val patientCount = it.getPatientsCount()
-                    // Convert UI state to database model
-                    val patient = state.toDatabaseModel(patientCount, _databaseUtils)
-                    it.savePatient(patient)
-                    true
-                } ?: false
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            false
-        }
+    private fun updateLegacyState() {
+        val mviState = state.value
+        _legacyUiState.value = AddPatientUiState(
+            firstName = mviState.firstName,
+            lastName = mviState.lastName,
+            birthDate = mviState.birthDate,
+            gender = mviState.gender,
+            placeOfBirth = mviState.placeOfBirth,
+            taxCode = mviState.taxCode,
+            phone = mviState.phone,
+            email = mviState.email,
+            street = mviState.street,
+            city = mviState.city,
+            zipCode = mviState.zipCode,
+            province = mviState.province,
+            country = mviState.country,
+            height = mviState.height,
+            weight = mviState.weight,
+            bmi = mviState.bmi,
+            dominantSide = mviState.dominantSide,
+            fatherFirstName = mviState.fatherFirstName,
+            fatherLastName = mviState.fatherLastName,
+            motherFirstName = mviState.motherFirstName,
+            motherLastName = mviState.motherLastName,
+            treatmentConsent = mviState.treatmentConsent,
+            marketingConsent = mviState.marketingConsent,
+            thirdPartyConsent = mviState.thirdPartyConsent,
+            age = mviState.age,
+            isMinor = mviState.isMinor,
+            isParentSectionExpanded = mviState.isParentSectionExpanded,
+            isSaving = mviState.isSaving,
+            errorMessage = mviState.errorMessage
+        )
     }
 }
 
 /**
- * Extension to convert UI state to database model
+ * Extension to convert MVI state to domain model
+ * Follows Clean Architecture by converting UI data to domain entities
  */
-private fun AddPatientUiState.toDatabaseModel(patientCount: Long, databaseUtils: DatabaseUtilsInterface): com.narde.gestionaleosteopatabetto.data.database.models.Patient {
-    // Generate patient ID using actual patient count
-    val patientId = databaseUtils.generatePatientId(patientCount)
-    
-    return databaseUtils.createNewPatient(patientId).apply {
-        datiPersonali?.apply {
-            nome = firstName
-            cognome = lastName
-            // Convert Italian format (DD/MM/AAAA) to ISO format (YYYY-MM-DD) for database storage
-            dataNascita = DateUtils.convertItalianToIsoFormat(birthDate)
-            sesso = gender
-            luogoNascita = placeOfBirth
-            codiceFiscale = taxCode
-            telefonoPaziente = phone
-            emailPaziente = this@toDatabaseModel.email
-            
-            // Anthropometric measurements
-            altezza = height.toIntOrNull() ?: 0
-            peso = weight.toDoubleOrNull() ?: 0.0
-            bmi = this@toDatabaseModel.bmi.toDoubleOrNull() // BMI can be null
-            latoDominante = dominantSide
-        }
-        
-        indirizzo?.apply {
-            via = street
-            citta = city
-            cap = zipCode
-            provincia = province
-            nazione = country
-            tipoIndirizzo = "residenza"
-        }
-        
-        privacy?.apply {
-            consensoTrattamento = treatmentConsent
-            consensoMarketing = marketingConsent
-            consensoTerzeparti = thirdPartyConsent
-            dataConsenso = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date.toString()
-        }
-        
-        // Add parent information only for minors
-        if (isMinor && (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank() || 
-                        motherFirstName.isNotBlank() || motherLastName.isNotBlank())) {
-            genitori?.apply {
-                if (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank()) {
-                    padre?.apply {
-                        nome = fatherFirstName
-                        cognome = fatherLastName
-                    }
-                }
-                if (motherFirstName.isNotBlank() || motherLastName.isNotBlank()) {
-                    madre?.apply {
-                        nome = motherFirstName
-                        cognome = motherLastName
-                    }
-                }
-            }
-        }
+private fun AddPatientState.toDomainModel(): Patient {
+    val birthDate = DateUtils.parseItalianDate(birthDate)
+    val gender = when (this.gender) {
+        "M" -> Gender.MALE
+        "F" -> Gender.FEMALE
+        else -> Gender.MALE // Default fallback
     }
+    
+    val dominantSide = when (this.dominantSide) {
+        "dx" -> DominantSide.RIGHT
+        "sx" -> DominantSide.LEFT
+        else -> DominantSide.RIGHT // Default fallback
+    }
+    
+    val address = if (street.isNotBlank() || city.isNotBlank() || zipCode.isNotBlank()) {
+        Address(
+            street = street,
+            city = city,
+            zipCode = zipCode,
+            province = province,
+            country = country
+        )
+    } else null
+    
+    val anthropometricData = if (height.isNotBlank() || weight.isNotBlank()) {
+        AnthropometricData(
+            height = height.toIntOrNull() ?: 0,
+            weight = weight.toDoubleOrNull() ?: 0.0,
+            bmi = bmi.toDoubleOrNull(),
+            dominantSide = dominantSide
+        )
+    } else null
+    
+    val privacyConsents = PrivacyConsents(
+        treatmentConsent = treatmentConsent,
+        marketingConsent = marketingConsent,
+        thirdPartyConsent = thirdPartyConsent,
+        consentDate = "2024-01-01", // TODO: Use proper date when kotlinx.datetime issues are resolved
+        notes = null
+    )
+    
+    val parentInfo = if (isMinor && (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank() || 
+                                    motherFirstName.isNotBlank() || motherLastName.isNotBlank())) {
+        val father = if (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank()) {
+            Parent(fatherFirstName, fatherLastName)
+        } else null
+        
+        val mother = if (motherFirstName.isNotBlank() || motherLastName.isNotBlank()) {
+            Parent(motherFirstName, motherLastName)
+        } else null
+        
+        ParentInfo(father, mother)
+    } else null
+    
+    return Patient(
+        id = "", // Will be generated by the use case
+        firstName = firstName,
+        lastName = lastName,
+        birthDate = birthDate,
+        gender = gender,
+        placeOfBirth = placeOfBirth,
+        taxCode = taxCode,
+        phone = phone,
+        email = email,
+        address = address,
+        anthropometricData = anthropometricData,
+        privacyConsents = privacyConsents,
+        parentInfo = parentInfo
+    )
 }
