@@ -105,7 +105,7 @@ fun PatientDetailsScreen(
                 actions = {
                     if (currentDatabasePatient != null) {
                         if (isEditMode) {
-                            // Cancel button
+                            // Cancel button with enhanced contrast for better readability
                             TextButton(
                                 onClick = {
                                     isEditMode = false
@@ -113,16 +113,25 @@ fun PatientDetailsScreen(
                                     currentDatabasePatient?.let {
                                         editViewModel.initializeWithPatient(it)
                                     }
-                                }
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(Res.string.cancel_edit)
+                                    contentDescription = stringResource(Res.string.cancel_edit),
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(stringResource(Res.string.cancel_edit))
+                                Text(
+                                    text = stringResource(Res.string.cancel_edit),
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                )
                             }
-                            // Save button
+                            // Save button with enhanced contrast for better readability
                             TextButton(
                                 onClick = {
                                     editViewModel.updatePatient {
@@ -132,11 +141,19 @@ fun PatientDetailsScreen(
                                         onPatientUpdated()
                                     }
                                 },
-                                enabled = !uiState.isUpdating && !uiState.isUpdateSuccessful
+                                enabled = !uiState.isUpdating && !uiState.isUpdateSuccessful,
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             ) {
                                 when {
                                     uiState.isUpdating -> {
-                                        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            strokeWidth = 2.dp
+                                        )
                                     }
 
                                     uiState.isUpdateSuccessful -> {
@@ -150,17 +167,21 @@ fun PatientDetailsScreen(
                                     else -> {
                                         Icon(
                                             imageVector = Icons.Default.Check,
-                                            contentDescription = stringResource(Res.string.save_changes)
+                                            contentDescription = stringResource(Res.string.save_changes),
+                                            tint = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    when {
+                                    text = when {
                                         uiState.isUpdating -> stringResource(Res.string.updating)
                                         uiState.isUpdateSuccessful -> stringResource(Res.string.patient_updated_success)
                                         else -> stringResource(Res.string.save_changes)
-                                    }
+                                    },
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                                 )
                             }
                         } else {
@@ -466,7 +487,7 @@ private fun ViewPatientInfo(
                 }
 
                 // Privacy notes if available
-                privacy.note_privacy?.takeIf { it.isNotEmpty() }?.let {
+                privacy.note_privacy.takeIf { it.isNotEmpty() }?.let {
                     PatientInfoRow(
                         label = stringResource(Res.string.privacy_notes),
                         value = it

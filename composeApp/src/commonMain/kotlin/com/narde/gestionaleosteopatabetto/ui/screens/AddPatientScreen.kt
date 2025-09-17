@@ -741,23 +741,35 @@ fun AddPatientScreen(
                 }
             }
             
-            // Save button    
+            // Save button with enhanced contrast for better readability
             Button(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .handleTabKeyNavigation(),
                 onClick = { viewModel.savePatient(onPatientSaved) },
-                enabled = !uiState.isSaving
+                enabled = !uiState.isSaving,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             ) {
                 if (uiState.isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                Text(if (uiState.isSaving) stringResource(Res.string.saving) else stringResource(Res.string.save_patient))
+                Text(
+                    text = if (uiState.isSaving) stringResource(Res.string.saving) else stringResource(Res.string.save_patient),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             
             // Bottom padding for FAB
