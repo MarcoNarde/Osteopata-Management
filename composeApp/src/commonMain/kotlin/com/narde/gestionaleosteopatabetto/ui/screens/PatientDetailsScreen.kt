@@ -56,16 +56,12 @@ fun PatientDetailsScreen(
     databasePatient: DatabasePatient?,
     onBackClick: () -> Unit,
     onPatientUpdated: () -> Unit = {},
-    editViewModel: EditPatientViewModel = viewModel(),
-    updatePatientUseCase: UpdatePatientUseCase? = null
+    editViewModel: EditPatientViewModel = viewModel()
 ) {
-    var isEditMode by remember { mutableStateOf(false) }
-    val uiState by editViewModel.uiState.collectAsState()
-    val focusManager = LocalFocusManager.current
-
     // State for managing current patient data that can be updated after save
     var currentDatabasePatient by remember(databasePatient) { mutableStateOf(databasePatient) }
     var currentUIPatient by remember(patient) { mutableStateOf(patient) }
+    val uiState by editViewModel.uiState.collectAsState()
 
     // Initialize the edit form when database patient is available
     LaunchedEffect(currentDatabasePatient) {
@@ -73,38 +69,11 @@ fun PatientDetailsScreen(
             editViewModel.initializeWithPatient(it)
         }
     }
-
-    // Function to reload patient data after successful save
-    val reloadPatientData = remember {
-        {
-            if (isDatabaseSupported()) {
-                val repository = DatabaseInitializer.getPatientRepository()
-                repository?.let { repo ->
-                    try {
-                        // Use the current database patient ID if available, fallback to UI patient ID
-                        val patientId = currentDatabasePatient?.idPaziente ?: patient.id
-                        val updatedDbPatient = repo.getPatientById(patientId)
-                        if (updatedDbPatient != null) {
-                            currentDatabasePatient = updatedDbPatient
-                            // Convert to UI patient to update the display
-                            val databaseUtils = createDatabaseUtils()
-                            currentUIPatient = databaseUtils.toUIPatient(updatedDbPatient)
-                            println("✅ Patient data reloaded successfully: ${updatedDbPatient.datiPersonali?.nome} ${updatedDbPatient.datiPersonali?.cognome}")
-                        }
-                    } catch (e: Exception) {
-                        println("Error reloading patient data: ${e.message}")
-                    }
-                }
-            }
-        }
-    }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = if (isEditMode) stringResource(Res.string.edit_patient) else currentUIPatient.name
-                    )
+                    Text(text = currentUIPatient.name)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -112,112 +81,6 @@ fun PatientDetailsScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(Res.string.back)
                         )
-                    }
-                },
-                actions = {
-                    if (currentDatabasePatient != null) {
-                        if (isEditMode) {
-                            // Cancel button with enhanced contrast for better readability
-                            TextButton(
-                                onClick = {
-                                    isEditMode = false
-                                    // Re-initialize with current data
-                                    currentDatabasePatient?.let {
-                                        editViewModel.initializeWithPatient(it)
-                                    }
-                                },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(Res.string.cancel_edit),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(Res.string.cancel_edit),
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                                )
-                            }
-                            // Save button with enhanced contrast for better readability
-                            TextButton(
-                                onClick = {
-                                    // Use Clean Architecture approach if use case is available
-                                    if (updatePatientUseCase != null) {
-                                        // TODO: Convert current patient data to domain model and use use case
-                                        // For now, fall back to existing approach
-                                        editViewModel.updatePatient {
-                                            reloadPatientData()
-                                            isEditMode = false
-                                            onPatientUpdated()
-                                        }
-                                    } else {
-                                        // Existing approach
-                                        editViewModel.updatePatient {
-                                            reloadPatientData()
-                                            isEditMode = false
-                                            onPatientUpdated()
-                                        }
-                                    }
-                                },
-                                enabled = !uiState.isUpdating && !uiState.isUpdateSuccessful,
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            ) {
-                                when {
-                                    uiState.isUpdating -> {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            color = MaterialTheme.colorScheme.primary,
-                                            strokeWidth = 2.dp
-                                        )
-                                    }
-
-                                    uiState.isUpdateSuccessful -> {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = stringResource(Res.string.patient_updated_success),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-
-                                    else -> {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = stringResource(Res.string.save_changes),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = when {
-                                        uiState.isUpdating -> stringResource(Res.string.updating)
-                                        uiState.isUpdateSuccessful -> stringResource(Res.string.patient_updated_success)
-                                        else -> stringResource(Res.string.save_changes)
-                                    },
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                                )
-                            }
-                        } else {
-                            // Edit button
-                            IconButton(
-                                onClick = { isEditMode = true }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = stringResource(Res.string.edit_patient)
-                                )
-                            }
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -263,43 +126,62 @@ fun PatientDetailsScreen(
                 }
             }
 
-            // Tab interface for patient data
-            if (isEditMode && currentDatabasePatient != null) {
-                // In edit mode, show the edit form without tabs
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    EditPatientForm(
-                        uiState = uiState,
-                        viewModel = editViewModel,
-                        focusManager = focusManager
-                    )
-                }
-            } else {
-                // In view mode, show tabs for personal data and clinical history
-                PatientDataTabs(
-                    patient = currentUIPatient,
-                    databasePatient = currentDatabasePatient
-                )
-            }
+            // Tab interface for patient data with per-tab editing
+            PatientDataTabs(
+                patient = currentUIPatient,
+                databasePatient = currentDatabasePatient,
+                editViewModel = editViewModel,
+                onPatientUpdated = onPatientUpdated
+            )
         }
     }
 }
 
 /**
  * Tab interface for patient data with Personal Data and Clinical History tabs
+ * Each tab supports independent editing
  */
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun PatientDataTabs(
     patient: Patient,
-    databasePatient: DatabasePatient?
+    databasePatient: DatabasePatient?,
+    editViewModel: EditPatientViewModel,
+    onPatientUpdated: () -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
+    
+    // Per-tab edit mode states
+    var isPersonalDataEditMode by remember { mutableStateOf(false) }
+    var isClinicalHistoryEditMode by remember { mutableStateOf(false) }
+    
+    // State for managing current patient data
+    var currentDatabasePatient by remember(databasePatient) { mutableStateOf(databasePatient) }
+    var currentUIPatient by remember(patient) { mutableStateOf(patient) }
+    
+    // Function to reload patient data after successful save
+    val reloadPatientData = remember {
+        {
+            if (isDatabaseSupported()) {
+                val repository = DatabaseInitializer.getPatientRepository()
+                repository?.let { repo ->
+                    try {
+                        val patientId = currentDatabasePatient?.idPaziente ?: patient.id
+                        val updatedDbPatient = repo.getPatientById(patientId)
+                        if (updatedDbPatient != null) {
+                            currentDatabasePatient = updatedDbPatient
+                            val databaseUtils = createDatabaseUtils()
+                            currentUIPatient = databaseUtils.toUIPatient(updatedDbPatient)
+                            println("✅ Patient data reloaded successfully: ${updatedDbPatient.datiPersonali?.nome} ${updatedDbPatient.datiPersonali?.cognome}")
+                        }
+                    } catch (e: Exception) {
+                        println("Error reloading patient data: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
     
     val tabs = listOf(
         stringResource(Res.string.tab_personal_data),
@@ -309,7 +191,7 @@ private fun PatientDataTabs(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Tab row
+        // Tab row with edit buttons
         TabRow(
             selectedTabIndex = pagerState.currentPage,
             modifier = Modifier.fillMaxWidth()
@@ -327,7 +209,7 @@ private fun PatientDataTabs(
             }
         }
         
-        // Tab content
+        // Tab content with per-tab edit functionality
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
@@ -335,31 +217,286 @@ private fun PatientDataTabs(
             when (page) {
                 0 -> {
                     // Personal Data tab
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        ViewPatientInfo(
-                            patient = patient,
-                            databasePatient = databasePatient
-                        )
-                    }
+                    PersonalDataTabContent(
+                        patient = currentUIPatient,
+                        databasePatient = currentDatabasePatient,
+                        editViewModel = editViewModel,
+                        isEditMode = isPersonalDataEditMode,
+                        onEditModeChange = { isPersonalDataEditMode = it },
+                        onPatientUpdated = {
+                            reloadPatientData()
+                            onPatientUpdated()
+                        }
+                    )
                 }
                 1 -> {
                     // Clinical History tab
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        ClinicalHistoryContent(
-                            databasePatient = databasePatient
-                        )
-                    }
+                    ClinicalHistoryTabContent(
+                        databasePatient = currentDatabasePatient,
+                        isEditMode = isClinicalHistoryEditMode,
+                        onEditModeChange = { isClinicalHistoryEditMode = it },
+                        onPatientUpdated = {
+                            reloadPatientData()
+                            onPatientUpdated()
+                        }
+                    )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Personal Data tab content with edit functionality
+ */
+@Composable
+private fun PersonalDataTabContent(
+    patient: Patient,
+    databasePatient: DatabasePatient?,
+    editViewModel: EditPatientViewModel,
+    isEditMode: Boolean,
+    onEditModeChange: (Boolean) -> Unit,
+    onPatientUpdated: () -> Unit
+) {
+    val uiState by editViewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Edit/Save/Cancel buttons for personal data
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            if (isEditMode) {
+                // Cancel button
+                TextButton(
+                    onClick = {
+                        onEditModeChange(false)
+                        // Re-initialize with current data
+                        databasePatient?.let {
+                            editViewModel.initializeWithPatient(it)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(Res.string.cancel_edit),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(Res.string.cancel_edit),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Save button
+                TextButton(
+                    onClick = {
+                        editViewModel.updatePatient {
+                            onEditModeChange(false)
+                            onPatientUpdated()
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = stringResource(Res.string.save),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(Res.string.save),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                // Edit button
+                TextButton(
+                    onClick = { onEditModeChange(true) },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(Res.string.edit),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(Res.string.edit),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Content based on edit mode
+        if (isEditMode) {
+            // Edit form
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                EditPatientForm(
+                    uiState = uiState,
+                    viewModel = editViewModel,
+                    focusManager = focusManager
+                )
+            }
+        } else {
+            // View mode
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                ViewPatientInfo(
+                    patient = patient,
+                    databasePatient = databasePatient
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Clinical history tab content with edit functionality
+ */
+@Composable
+private fun ClinicalHistoryTabContent(
+    databasePatient: DatabasePatient?,
+    isEditMode: Boolean,
+    onEditModeChange: (Boolean) -> Unit,
+    onPatientUpdated: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Edit/Save/Cancel buttons for clinical history
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            if (isEditMode) {
+                // Cancel button
+                TextButton(
+                    onClick = { onEditModeChange(false) },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(Res.string.cancel_edit),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(Res.string.cancel_edit),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Save button
+                TextButton(
+                    onClick = {
+                        // TODO: Implement clinical history save functionality
+                        onEditModeChange(false)
+                        onPatientUpdated()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = stringResource(Res.string.save),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(Res.string.save),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                // Edit button
+                TextButton(
+                    onClick = { onEditModeChange(true) },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(Res.string.edit),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(Res.string.edit),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Content based on edit mode
+        if (isEditMode) {
+            // Edit form for clinical history
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // TODO: Implement clinical history edit form
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Text(
+                        text = "Clinical History Edit Form - Coming Soon",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            // View mode
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                ClinicalHistoryContent(
+                    databasePatient = databasePatient
+                )
             }
         }
     }

@@ -113,6 +113,8 @@
     
     <!-- Edit patient -->
     <string name="edit_patient">Edit Patient</string>
+    <string name="edit">Edit</string>
+    <string name="save">Save</string>
     <string name="cancel_edit">Cancel</string>
     <string name="save_changes">Save Changes</string>
     <string name="updating">Updating...</string>
