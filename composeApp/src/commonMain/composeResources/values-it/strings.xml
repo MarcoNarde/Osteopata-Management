@@ -47,9 +47,9 @@
     <string name="anthropometric_measurements">Misure Antropometriche</string>
     <string name="height_cm">Altezza (cm)</string>
     <string name="weight_kg">Peso (kg)</string>
-    <string name="bmi">IMC</string>
-    <string name="bmi_placeholder">Inserisci valore IMC</string>
-    <string name="patient_bmi">IMC: %1$s</string>
+    <string name="bmi">BMI</string>
+    <string name="bmi_placeholder">Inserisci valore BMI</string>
+    <string name="patient_bmi">BMI: %1$s</string>
     <string name="dominant_side">Lato Dominante</string>
     <string name="dominant_side_right">Destro (DX)</string>
     <string name="dominant_side_left">Sinistro (SX)</string>
@@ -58,7 +58,10 @@
     <string name="city">Città</string>
     <string name="zip_code">CAP</string>
     <string name="province">Provincia</string>
-    <string name="country">Paese</string>
+    
+    <!-- Success messages -->
+    <string name="patient_update_success_message">✅ Informazioni paziente salvate con successo!</string>
+    <string name="country">Nazione</string>
     <string name="father_first_name">Nome del Padre</string>
     <string name="father_last_name">Cognome del Padre</string>
     <string name="mother_first_name">Nome della Madre</string>
@@ -83,7 +86,7 @@
     <string name="address_city">Città</string>
     <string name="address_zip">CAP</string>
     <string name="address_province">Provincia</string>
-    <string name="address_country">Paese</string>
+    <string name="address_country">Nazione</string>
     <string name="address_type">Tipo Indirizzo</string>
     <string name="parents_information">Informazioni Genitori</string>
     <string name="parent_information_minor">Informazioni Genitori (Minore: Età %1$s)</string>
@@ -91,30 +94,29 @@
     <string name="father_info">Padre</string>
     <string name="mother_info">Madre</string>
     <string name="doctor_information">Medico di Famiglia</string>
-    <string name="privacy_information">Privacy e Consensi</string>
-    <string name="privacy_treatment_consent">Consenso al Trattamento</string>
+    <string name="privacy_information">Privacy &amp; Consensi</string>
+    <string name="privacy_treatment_consent">Consenso Trattamento</string>
     <string name="privacy_data_processing">Consenso Trattamento Dati</string>
     <string name="privacy_marketing_consent">Consenso Marketing</string>
     <string name="privacy_third_party_consent">Consenso Terze Parti</string>
-    <string name="privacy_consent_date">Data del Consenso</string>
+    <string name="privacy_consent_date">Data Consenso</string>
     <string name="privacy_notes">Note Privacy</string>
     
     <!-- Privacy consent statements -->
-    <string name="privacy_treatment_consent_statement">Acconsento al trattamento dei miei dati personali per cure mediche*</string>
-    <string name="privacy_marketing_consent_statement">Acconsento a ricevere comunicazioni di marketing</string>
-    <string name="privacy_third_party_consent_statement">Acconsento alla condivisione dei dati con terze parti</string>
+    <string name="privacy_treatment_consent_statement">Consento al trattamento dei miei dati personali per cure mediche*</string>
+    <string name="privacy_marketing_consent_statement">Consento a ricevere comunicazioni di marketing</string>
+    <string name="privacy_third_party_consent_statement">Consento alla condivisione dei dati con terze parti</string>
     
     <!-- Save patient button -->
     <string name="save_patient">Salva Paziente</string>
-    <string name="saving">Salvando...</string>
+    <string name="saving">Salvataggio...</string>
     
     <!-- Edit patient -->
     <string name="edit_patient">Modifica Paziente</string>
     <string name="cancel_edit">Annulla</string>
     <string name="save_changes">Salva Modifiche</string>
-    <string name="updating">Aggiornando...</string>
+    <string name="updating">Aggiornamento...</string>
     <string name="patient_updated_success">Paziente aggiornato con successo</string>
-    <string name="patient_update_success_message">✅ Informazioni paziente salvate con successo!</string>
     <string name="edit_mode">Modalità Modifica</string>
     <string name="view_mode">Modalità Visualizzazione</string>
     
@@ -126,4 +128,107 @@
     <string name="delete_patient_cancel">Annulla</string>
     <string name="patient_deleted_success">Paziente eliminato con successo</string>
     <string name="patient_label">Paziente</string>
+    
+    <!-- Clinical History Tabs -->
+    <string name="tab_personal_data">Dati Personali</string>
+    <string name="tab_clinical_history">Storia Clinica</string>
+    
+    <!-- Clinical History Sections -->
+    <string name="chronic_conditions">Patologie Croniche</string>
+    <string name="lifestyle_factors">Stile di Vita</string>
+    <string name="pharmacological_therapies">Terapie Farmacologiche</string>
+    <string name="interventions_traumas">Interventi &amp; Traumi</string>
+    <string name="diagnostic_tests">Esami Strumentali</string>
+    <string name="pediatric_history">Anamnesi Pediatrica</string>
+    
+    <!-- Chronic Conditions -->
+    <string name="drug_allergies">Allergie Farmaci</string>
+    <string name="diabetes">Diabete</string>
+    <string name="hyperthyroidism">Ipertiroidismo</string>
+    <string name="heart_disease">Cardiopatia</string>
+    <string name="arterial_hypertension">Ipertensione Arteriosa</string>
+    <string name="other_pathologies">Altre Patologie</string>
+    <string name="present">Presente</string>
+    <string name="not_present">Non Presente</string>
+    <string name="type">Tipo</string>
+    <string name="onset_date">Data Insorgenza</string>
+    <string name="status">Stato</string>
+    
+    <!-- Lifestyle Factors -->
+    <string name="smoking_habits">Abitudini Tabagiche</string>
+    <string name="work_type">Tipo di Lavoro</string>
+    <string name="profession">Professione</string>
+    <string name="work_hours_per_day">Ore Lavoro al Giorno</string>
+    <string name="physical_activity">Attività Fisica</string>
+    <string name="non_smoker">Non fumatore</string>
+    <string name="cigarettes_per_day">Sigarette al Giorno</string>
+    <string name="years_smoking">Anni di Fumo</string>
+    <string name="quit_date">Data Smettere</string>
+    <string name="sedentary">Sedentario</string>
+    <string name="moderate">Moderato</string>
+    <string name="heavy">Pesante</string>
+    <string name="sports">Sport</string>
+    <string name="frequency">Frequenza</string>
+    <string name="intensity">Intensità</string>
+    <string name="occasional">Occasionale</string>
+    <string name="weekly">Settimanale</string>
+    <string name="daily">Quotidiana</string>
+    <string name="low">Bassa</string>
+    <string name="medium">Media</string>
+    <string name="high">Alta</string>
+    
+    <!-- Pharmacological Therapies -->
+    <string name="medication">Farmaco</string>
+    <string name="dosage">Dosaggio</string>
+    <string name="start_date">Data Inizio</string>
+    <string name="end_date">Data Fine</string>
+    <string name="indication">Indicazione</string>
+    <string name="ongoing">In Corso</string>
+    
+    <!-- Interventions & Traumas -->
+    <string name="intervention_type">Tipo</string>
+    <string name="description">Descrizione</string>
+    <string name="treatment">Trattamento</string>
+    <string name="outcome">Esito</string>
+    <string name="trauma">Trauma</string>
+    <string name="surgical_intervention">Intervento Chirurgico</string>
+    <string name="other">Altro</string>
+    <string name="complete_recovery">Guarigione Completa</string>
+    <string name="sequelae">Sequeli</string>
+    
+    <!-- Diagnostic Tests -->
+    <string name="test_type">Tipo Esame</string>
+    <string name="body_area">Distretto</string>
+    <string name="results">Risultati</string>
+    <string name="facility">Struttura</string>
+    <string name="mri">RMN</string>
+    <string name="ct_scan">TAC</string>
+    <string name="x_ray">RX</string>
+    <string name="ultrasound">Ecografia</string>
+    <string name="blood_tests">Esami Ematochimici</string>
+    
+    <!-- Pediatric History -->
+    <string name="pregnancy">Gravidanza</string>
+    <string name="birth">Parto</string>
+    <string name="development">Sviluppo</string>
+    <string name="general_notes">Note Generali</string>
+    <string name="complications">Complicazioni</string>
+    <string name="birth_type">Tipo Parto</string>
+    <string name="natural_birth">Parto Naturale</string>
+    <string name="caesarean">Cesareo</string>
+    <string name="forceps">Forcipe</string>
+    <string name="birth_weight_grams">Peso alla Nascita (grammi)</string>
+    <string name="apgar_score_5min">Punteggio APGAR (5 min)</string>
+    <string name="first_steps_months">Primi Passi (mesi)</string>
+    <string name="first_words_months">Prime Parole (mesi)</string>
+    <string name="development_problems">Problemi di Sviluppo</string>
+    
+    <!-- No data messages -->
+    <string name="no_clinical_history">Nessuna storia clinica disponibile</string>
+    <string name="no_chronic_conditions">Nessuna patologia cronica registrata</string>
+    <string name="no_lifestyle_data">Nessun dato sullo stile di vita registrato</string>
+    <string name="no_medications">Nessun farmaco registrato</string>
+    <string name="no_interventions">Nessun intervento o trauma registrato</string>
+    <string name="no_tests">Nessun esame strumentale registrato</string>
+    <string name="no_pediatric_history">Nessuna anamnesi pediatrica registrata</string>
 </resources>

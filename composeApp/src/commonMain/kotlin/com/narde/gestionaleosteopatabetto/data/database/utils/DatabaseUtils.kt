@@ -2,6 +2,7 @@ package com.narde.gestionaleosteopatabetto.data.database.utils
 
 import com.narde.gestionaleosteopatabetto.data.database.models.*
 import com.narde.gestionaleosteopatabetto.data.model.Patient as UIPatient
+import io.realm.kotlin.ext.realmListOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -118,8 +119,7 @@ class DatabaseUtils : DatabaseUtilsInterface {
             patologieCroniche = PatologieCroniche().apply {
                 allergieFarmaci = AllergieFarmaci().apply {
                     presente = true
-                    // Note: In a real Realm implementation, this would be initialized by the database
-                    // For sample data, we'll leave it as null and handle it in the actual database operations
+                    listaAllergie = realmListOf("Penicillina", "Aspirina")
                 }
                 diabete = Diabete().apply {
                     presente = true
@@ -129,8 +129,19 @@ class DatabaseUtils : DatabaseUtilsInterface {
                 cardiopatia = false
                 ipertensioneArteriosa = true
                 
-                // Note: In a real Realm implementation, these lists would be initialized by the database
-                // For sample data, we'll leave them as null and handle them in the actual database operations
+                // Add other chronic conditions
+                altrePatologie = realmListOf(
+                    AltraPatologia().apply {
+                        patologia = "Artrosi cervicale"
+                        dataInsorgenza = "2020-03-15"
+                        stato = "in_trattamento"
+                    },
+                    AltraPatologia().apply {
+                        patologia = "Reflusso gastroesofageo"
+                        dataInsorgenza = "2019-08-22"
+                        stato = "attiva"
+                    }
+                )
             }
             
             // Lifestyle factors
@@ -145,40 +156,104 @@ class DatabaseUtils : DatabaseUtilsInterface {
                 oreLavoroGiorno = 8
                 attivitaSportiva = AttivitaSportiva().apply {
                     presente = true
-                    // Note: In a real Realm implementation, the sport list would be initialized by the database
-                    // For sample data, we'll leave it as null and handle it in the actual database operations
+                    sport = realmListOf("Nuoto", "Corsa")
                     frequenza = "settimanale"
                     intensita = "media"
                 }
             }
             
-            // Note: In a real Realm implementation, these lists would be initialized by the database
-            // For sample data, we'll leave them as null and handle them in the actual database operations
+            // Drug therapies
+            terapieFarmacologiche = realmListOf(
+                TerapiaFarmacologica().apply {
+                    farmaco = "Metformina"
+                    dosaggio = "500mg"
+                    frequenza = "2 volte al giorno"
+                    dataInizio = "2021-01-15"
+                    dataFine = ""
+                    indicazione = "Controllo glicemia"
+                },
+                TerapiaFarmacologica().apply {
+                    farmaco = "Ramipril"
+                    dosaggio = "5mg"
+                    frequenza = "1 volta al giorno"
+                    dataInizio = "2020-06-10"
+                    dataFine = ""
+                    indicazione = "Controllo pressione arteriosa"
+                }
+            )
+            
+            // Interventions and traumas
+            interventiTrauma = realmListOf(
+                InterventoTrauma().apply {
+                    id = "INT001"
+                    tipo = "intervento_chirurgico"
+                    descrizione = "Appendicectomia laparoscopica"
+                    data = "2015-04-12"
+                    trattamento = "Laparoscopia"
+                    esito = "guarigione_completa"
+                },
+                InterventoTrauma().apply {
+                    id = "INT002"
+                    tipo = "trauma"
+                    descrizione = "Frattura polso destro"
+                    data = "2018-09-03"
+                    trattamento = "Trattamento conservativo"
+                    esito = "guarigione_completa"
+                }
+            )
+            
+            // Diagnostic tests
+            esamiStrumentali = realmListOf(
+                EsameStrumentale().apply {
+                    id = "EX001"
+                    tipo = "esami_ematochimici"
+                    distretto = "Sistema metabolico"
+                    data = "2023-11-15"
+                    risultato = "Glicemia a digiuno: 126 mg/dl (valore borderline)"
+                    struttura = "Laboratorio Analisi Roma"
+                },
+                EsameStrumentale().apply {
+                    id = "EX002"
+                    tipo = "RX"
+                    distretto = "Colonna cervicale"
+                    data = "2023-10-08"
+                    risultato = "Artrosi C5-C6, conferma diagnosi clinica"
+                    struttura = "Ospedale San Giovanni Roma"
+                },
+                EsameStrumentale().apply {
+                    id = "EX003"
+                    tipo = "esami_ematochimici"
+                    distretto = "Sistema ematologico"
+                    data = "2023-11-15"
+                    risultato = "Emocromo completo: tutti i valori nella norma"
+                    struttura = "Laboratorio Analisi Roma"
+                }
+            )
             
             // Pediatric history
             anamnesiPediatrica = AnamnesiPediatrica().apply {
                 gravidanza = Gravidanza().apply {
                     complicazioni = false
-                    note = ""
+                    note = "Gravidanza fisiologica"
                 }
                 parto = Parto().apply {
                     tipo = "naturale"
                     complicazioni = false
                     pesoNascitaGrammi = 3200
                     punteggioApgar5min = 9
-                    note = ""
+                    note = "Parto eutocico"
                 }
                 sviluppo = Sviluppo().apply {
                     primiPassiMesi = 12
                     primeParoleMesi = 11
                     problemiSviluppo = false
-                    note = ""
+                    note = "Sviluppo psicomotorio nella norma"
                 }
                 
-                // Note: In a real Realm implementation, this list would be initialized by the database
-                // For sample data, we'll leave it as null and handle it in the actual database operations
+                // Note: problemiSignificativi field doesn't exist in the current model
+                // This would need to be added to the AnamnesiPediatrica model if needed
                 
-                noteGenerali = "Sviluppo nella norma, nessuna particolare problematica"
+                noteGenerali = "Sviluppo nella norma, nessuna particolare problematica. Bambino sano con crescita regolare."
             }
         }
     }

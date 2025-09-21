@@ -128,4 +128,107 @@
     <string name="delete_patient_cancel">Cancel</string>
     <string name="patient_deleted_success">Patient deleted successfully</string>
     <string name="patient_label">Patient</string>
+    
+    <!-- Clinical History Tabs -->
+    <string name="tab_personal_data">Personal Data</string>
+    <string name="tab_clinical_history">Clinical History</string>
+    
+    <!-- Clinical History Sections -->
+    <string name="chronic_conditions">Chronic Conditions</string>
+    <string name="lifestyle_factors">Lifestyle Factors</string>
+    <string name="pharmacological_therapies">Pharmacological Therapies</string>
+    <string name="interventions_traumas">Interventions &amp; Traumas</string>
+    <string name="diagnostic_tests">Diagnostic Tests</string>
+    <string name="pediatric_history">Pediatric History</string>
+    
+    <!-- Chronic Conditions -->
+    <string name="drug_allergies">Drug Allergies</string>
+    <string name="diabetes">Diabetes</string>
+    <string name="hyperthyroidism">Hyperthyroidism</string>
+    <string name="heart_disease">Heart Disease</string>
+    <string name="arterial_hypertension">Arterial Hypertension</string>
+    <string name="other_pathologies">Other Pathologies</string>
+    <string name="present">Present</string>
+    <string name="not_present">Not Present</string>
+    <string name="type">Type</string>
+    <string name="onset_date">Onset Date</string>
+    <string name="status">Status</string>
+    
+    <!-- Lifestyle Factors -->
+    <string name="smoking_habits">Smoking Habits</string>
+    <string name="work_type">Work Type</string>
+    <string name="profession">Profession</string>
+    <string name="work_hours_per_day">Work Hours per Day</string>
+    <string name="physical_activity">Physical Activity</string>
+    <string name="non_smoker">Non-smoker</string>
+    <string name="cigarettes_per_day">Cigarettes per Day</string>
+    <string name="years_smoking">Years Smoking</string>
+    <string name="quit_date">Quit Date</string>
+    <string name="sedentary">Sedentary</string>
+    <string name="moderate">Moderate</string>
+    <string name="heavy">Heavy</string>
+    <string name="sports">Sports</string>
+    <string name="frequency">Frequency</string>
+    <string name="intensity">Intensity</string>
+    <string name="occasional">Occasional</string>
+    <string name="weekly">Weekly</string>
+    <string name="daily">Daily</string>
+    <string name="low">Low</string>
+    <string name="medium">Medium</string>
+    <string name="high">High</string>
+    
+    <!-- Pharmacological Therapies -->
+    <string name="medication">Medication</string>
+    <string name="dosage">Dosage</string>
+    <string name="start_date">Start Date</string>
+    <string name="end_date">End Date</string>
+    <string name="indication">Indication</string>
+    <string name="ongoing">Ongoing</string>
+    
+    <!-- Interventions & Traumas -->
+    <string name="intervention_type">Type</string>
+    <string name="description">Description</string>
+    <string name="treatment">Treatment</string>
+    <string name="outcome">Outcome</string>
+    <string name="trauma">Trauma</string>
+    <string name="surgical_intervention">Surgical Intervention</string>
+    <string name="other">Other</string>
+    <string name="complete_recovery">Complete Recovery</string>
+    <string name="sequelae">Sequelae</string>
+    
+    <!-- Diagnostic Tests -->
+    <string name="test_type">Test Type</string>
+    <string name="body_area">Body Area</string>
+    <string name="results">Results</string>
+    <string name="facility">Facility</string>
+    <string name="mri">MRI</string>
+    <string name="ct_scan">CT Scan</string>
+    <string name="x_ray">X-Ray</string>
+    <string name="ultrasound">Ultrasound</string>
+    <string name="blood_tests">Blood Tests</string>
+    
+    <!-- Pediatric History -->
+    <string name="pregnancy">Pregnancy</string>
+    <string name="birth">Birth</string>
+    <string name="development">Development</string>
+    <string name="general_notes">General Notes</string>
+    <string name="complications">Complications</string>
+    <string name="birth_type">Birth Type</string>
+    <string name="natural_birth">Natural Birth</string>
+    <string name="caesarean">Caesarean</string>
+    <string name="forceps">Forceps</string>
+    <string name="birth_weight_grams">Birth Weight (grams)</string>
+    <string name="apgar_score_5min">APGAR Score (5 min)</string>
+    <string name="first_steps_months">First Steps (months)</string>
+    <string name="first_words_months">First Words (months)</string>
+    <string name="development_problems">Development Problems</string>
+    
+    <!-- No data messages -->
+    <string name="no_clinical_history">No clinical history available</string>
+    <string name="no_chronic_conditions">No chronic conditions recorded</string>
+    <string name="no_lifestyle_data">No lifestyle data recorded</string>
+    <string name="no_medications">No medications recorded</string>
+    <string name="no_interventions">No interventions or traumas recorded</string>
+    <string name="no_tests">No diagnostic tests recorded</string>
+    <string name="no_pediatric_history">No pediatric history recorded</string>
 </resources>

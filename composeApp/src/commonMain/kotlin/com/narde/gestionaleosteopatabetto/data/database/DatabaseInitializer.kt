@@ -40,7 +40,8 @@ object DatabaseInitializer {
                 val samplePatient = _databaseUtils.createSamplePatient()
                 
                 // Add clinical history to the sample patient
-                samplePatient.storiaClinica = _databaseUtils.createSampleClinicalHistory()
+                val clinicalHistory = _databaseUtils.createSampleClinicalHistory()
+                samplePatient.storiaClinica = clinicalHistory
                 
                 repo.savePatient(samplePatient)
                 println("✅ Added sample patient with clinical history: ${samplePatient.datiPersonali?.nome} ${samplePatient.datiPersonali?.cognome}")

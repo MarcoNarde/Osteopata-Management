@@ -20,6 +20,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.narde.gestionaleosteopatabetto.data.model.Patient
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient as DatabasePatient
 import com.narde.gestionaleosteopatabetto.data.database.utils.*
@@ -226,8 +230,6 @@ fun PatientDetailsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
         ) {
             // Success message
             if (uiState.isUpdateSuccessful) {
@@ -235,7 +237,7 @@ fun PatientDetailsScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
                         text = stringResource(Res.string.patient_update_success_message),
@@ -251,7 +253,7 @@ fun PatientDetailsScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     ),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
                         text = uiState.errorMessage,
@@ -261,19 +263,198 @@ fun PatientDetailsScreen(
                 }
             }
 
+            // Tab interface for patient data
             if (isEditMode && currentDatabasePatient != null) {
-                EditPatientForm(
-                    uiState = uiState,
-                    viewModel = editViewModel,
-                    focusManager = focusManager
-                )
+                // In edit mode, show the edit form without tabs
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    EditPatientForm(
+                        uiState = uiState,
+                        viewModel = editViewModel,
+                        focusManager = focusManager
+                    )
+                }
             } else {
-                ViewPatientInfo(
+                // In view mode, show tabs for personal data and clinical history
+                PatientDataTabs(
                     patient = currentUIPatient,
                     databasePatient = currentDatabasePatient
                 )
             }
         }
+    }
+}
+
+/**
+ * Tab interface for patient data with Personal Data and Clinical History tabs
+ */
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun PatientDataTabs(
+    patient: Patient,
+    databasePatient: DatabasePatient?
+) {
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val coroutineScope = rememberCoroutineScope()
+    
+    val tabs = listOf(
+        stringResource(Res.string.tab_personal_data),
+        stringResource(Res.string.tab_clinical_history)
+    )
+    
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Tab row
+        TabRow(
+            selectedTabIndex = pagerState.currentPage,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    },
+                    text = { Text(title) }
+                )
+            }
+        }
+        
+        // Tab content
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> {
+                    // Personal Data tab
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        ViewPatientInfo(
+                            patient = patient,
+                            databasePatient = databasePatient
+                        )
+                    }
+                }
+                1 -> {
+                    // Clinical History tab
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        ClinicalHistoryContent(
+                            databasePatient = databasePatient
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Clinical history content displaying StoriaClinica data
+ */
+@Composable
+private fun ClinicalHistoryContent(
+    databasePatient: DatabasePatient?
+) {
+    val storiaClinica = databasePatient?.storiaClinica
+    
+    if (storiaClinica == null) {
+        // No clinical history available
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Text(
+                text = stringResource(Res.string.no_clinical_history),
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+    
+    // Chronic Conditions Section
+    storiaClinica.patologieCroniche?.let { patologie ->
+        PatientInfoSection(
+            title = stringResource(Res.string.chronic_conditions),
+            content = {
+                ChronicConditionsContent(patologie)
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+    
+    // Lifestyle Factors Section
+    storiaClinica.stileVita?.let { stileVita ->
+        PatientInfoSection(
+            title = stringResource(Res.string.lifestyle_factors),
+            content = {
+                LifestyleFactorsContent(stileVita)
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+    
+    // Pharmacological Therapies Section
+    if (storiaClinica.terapieFarmacologiche.isNotEmpty()) {
+        PatientInfoSection(
+            title = stringResource(Res.string.pharmacological_therapies),
+            content = {
+                PharmacologicalTherapiesContent(storiaClinica.terapieFarmacologiche)
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+    
+    // Interventions & Traumas Section
+    if (storiaClinica.interventiTrauma.isNotEmpty()) {
+        PatientInfoSection(
+            title = stringResource(Res.string.interventions_traumas),
+            content = {
+                InterventionsTraumasContent(storiaClinica.interventiTrauma)
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+    
+    // Diagnostic Tests Section
+    if (storiaClinica.esamiStrumentali.isNotEmpty()) {
+        PatientInfoSection(
+            title = stringResource(Res.string.diagnostic_tests),
+            content = {
+                DiagnosticTestsContent(storiaClinica.esamiStrumentali)
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+    
+    // Pediatric History Section
+    storiaClinica.anamnesiPediatrica?.let { anamnesi ->
+        PatientInfoSection(
+            title = stringResource(Res.string.pediatric_history),
+            content = {
+                PediatricHistoryContent(anamnesi)
+            }
+        )
     }
 }
 
@@ -969,4 +1150,474 @@ private fun PatientInfoRow(
  */
 private fun calculateAgeFromBirthDate(birthDateString: String): Int {
     return DateUtils.calculateAgeFromItalianDate(birthDateString) ?: 0
+}
+
+/**
+ * Chronic conditions content
+ */
+@Composable
+private fun ChronicConditionsContent(patologie: com.narde.gestionaleosteopatabetto.data.database.models.PatologieCroniche) {
+    // Drug allergies
+    patologie.allergieFarmaci?.let { allergie ->
+        if (allergie.presente) {
+            PatientInfoRow(
+                label = stringResource(Res.string.drug_allergies),
+                value = stringResource(Res.string.present)
+            )
+            if (allergie.listaAllergie.isNotEmpty()) {
+                allergie.listaAllergie.forEach { allergia ->
+                    PatientInfoRow(
+                        label = "  •",
+                        value = allergia
+                    )
+                }
+            }
+        } else {
+            PatientInfoRow(
+                label = stringResource(Res.string.drug_allergies),
+                value = stringResource(Res.string.not_present)
+            )
+        }
+    }
+    
+    // Diabetes
+    patologie.diabete?.let { diabete ->
+        if (diabete.presente) {
+            PatientInfoRow(
+                label = stringResource(Res.string.diabetes),
+                value = stringResource(Res.string.present)
+            )
+            if (diabete.tipologia.isNotEmpty()) {
+                PatientInfoRow(
+                    label = stringResource(Res.string.type),
+                    value = diabete.tipologia
+                )
+            }
+        } else {
+            PatientInfoRow(
+                label = stringResource(Res.string.diabetes),
+                value = stringResource(Res.string.not_present)
+            )
+        }
+    }
+    
+    // Other conditions
+    if (patologie.ipertiroidismo) {
+        PatientInfoRow(
+            label = stringResource(Res.string.hyperthyroidism),
+            value = stringResource(Res.string.present)
+        )
+    }
+    
+    if (patologie.cardiopatia) {
+        PatientInfoRow(
+            label = stringResource(Res.string.heart_disease),
+            value = stringResource(Res.string.present)
+        )
+    }
+    
+    if (patologie.ipertensioneArteriosa) {
+        PatientInfoRow(
+            label = stringResource(Res.string.arterial_hypertension),
+            value = stringResource(Res.string.present)
+        )
+    }
+    
+    // Other pathologies
+    if (patologie.altrePatologie.isNotEmpty()) {
+        patologie.altrePatologie.forEach { patologia ->
+            PatientInfoRow(
+                label = patologia.patologia,
+                value = "${patologia.stato} (${patologia.dataInsorgenza})"
+            )
+        }
+    }
+}
+
+/**
+ * Lifestyle factors content
+ */
+@Composable
+private fun LifestyleFactorsContent(stileVita: com.narde.gestionaleosteopatabetto.data.database.models.StileVita) {
+    // Smoking habits
+    stileVita.tabagismo?.let { tabagismo ->
+        PatientInfoRow(
+            label = stringResource(Res.string.smoking_habits),
+            value = tabagismo.stato
+        )
+        
+        if (tabagismo.sigaretteGiorno > 0) {
+            PatientInfoRow(
+                label = stringResource(Res.string.cigarettes_per_day),
+                value = tabagismo.sigaretteGiorno.toString()
+            )
+        }
+        
+        if (tabagismo.anniFumo > 0) {
+            PatientInfoRow(
+                label = stringResource(Res.string.years_smoking),
+                value = tabagismo.anniFumo.toString()
+            )
+        }
+        
+        if (tabagismo.dataSmettere.isNotEmpty()) {
+            PatientInfoRow(
+                label = stringResource(Res.string.quit_date),
+                value = tabagismo.dataSmettere
+            )
+        }
+    }
+    
+    // Work information
+    if (stileVita.lavoro.isNotEmpty()) {
+        PatientInfoRow(
+            label = stringResource(Res.string.work_type),
+            value = stileVita.lavoro
+        )
+    }
+    
+    if (stileVita.professione.isNotEmpty()) {
+        PatientInfoRow(
+            label = stringResource(Res.string.profession),
+            value = stileVita.professione
+        )
+    }
+    
+    if (stileVita.oreLavoroGiorno > 0) {
+        PatientInfoRow(
+            label = stringResource(Res.string.work_hours_per_day),
+            value = stileVita.oreLavoroGiorno.toString()
+        )
+    }
+    
+    // Physical activity
+    stileVita.attivitaSportiva?.let { sport ->
+        if (sport.presente) {
+            PatientInfoRow(
+                label = stringResource(Res.string.physical_activity),
+                value = stringResource(Res.string.present)
+            )
+            
+            if (sport.sport.isNotEmpty()) {
+                sport.sport.forEach { sportName ->
+                    PatientInfoRow(
+                        label = stringResource(Res.string.sports),
+                        value = sportName
+                    )
+                }
+            }
+            
+            if (sport.frequenza.isNotEmpty()) {
+                PatientInfoRow(
+                    label = stringResource(Res.string.frequency),
+                    value = sport.frequenza
+                )
+            }
+            
+            if (sport.intensita.isNotEmpty()) {
+                PatientInfoRow(
+                    label = stringResource(Res.string.intensity),
+                    value = sport.intensita
+                )
+            }
+        } else {
+            PatientInfoRow(
+                label = stringResource(Res.string.physical_activity),
+                value = stringResource(Res.string.not_present)
+            )
+        }
+    }
+}
+
+/**
+ * Pharmacological therapies content
+ */
+@Composable
+private fun PharmacologicalTherapiesContent(terapie: io.realm.kotlin.types.RealmList<com.narde.gestionaleosteopatabetto.data.database.models.TerapiaFarmacologica>) {
+    terapie.forEachIndexed { index, terapia ->
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Text(
+                    text = "${stringResource(Res.string.medication)} ${index + 1}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                PatientInfoRow(
+                    label = stringResource(Res.string.medication),
+                    value = terapia.farmaco
+                )
+                
+                if (terapia.dosaggio.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.dosage),
+                        value = terapia.dosaggio
+                    )
+                }
+                
+                if (terapia.frequenza.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.frequency),
+                        value = terapia.frequenza
+                    )
+                }
+                
+                if (terapia.dataInizio.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.start_date),
+                        value = terapia.dataInizio
+                    )
+                }
+                
+                val endDate = terapia.dataFine
+                if (endDate != null && endDate.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.end_date),
+                        value = endDate
+                    )
+                } else {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.status),
+                        value = stringResource(Res.string.ongoing)
+                    )
+                }
+                
+                if (terapia.indicazione.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.indication),
+                        value = terapia.indicazione
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Interventions and traumas content
+ */
+@Composable
+private fun InterventionsTraumasContent(interventi: io.realm.kotlin.types.RealmList<com.narde.gestionaleosteopatabetto.data.database.models.InterventoTrauma>) {
+    interventi.forEachIndexed { index, intervento ->
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Text(
+                    text = "${stringResource(Res.string.intervention_type)} ${index + 1}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                PatientInfoRow(
+                    label = stringResource(Res.string.intervention_type),
+                    value = intervento.tipo
+                )
+                
+                if (intervento.data.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.start_date),
+                        value = intervento.data
+                    )
+                }
+                
+                if (intervento.descrizione.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.description),
+                        value = intervento.descrizione
+                    )
+                }
+                
+                if (intervento.trattamento.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.treatment),
+                        value = intervento.trattamento
+                    )
+                }
+                
+                if (intervento.esito.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.outcome),
+                        value = intervento.esito
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Diagnostic tests content
+ */
+@Composable
+private fun DiagnosticTestsContent(esami: io.realm.kotlin.types.RealmList<com.narde.gestionaleosteopatabetto.data.database.models.EsameStrumentale>) {
+    esami.forEachIndexed { index, esame ->
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Text(
+                    text = "${stringResource(Res.string.test_type)} ${index + 1}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                PatientInfoRow(
+                    label = stringResource(Res.string.test_type),
+                    value = esame.tipo
+                )
+                
+                if (esame.data.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.start_date),
+                        value = esame.data
+                    )
+                }
+                
+                if (esame.distretto.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.body_area),
+                        value = esame.distretto
+                    )
+                }
+                
+                if (esame.risultato.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.results),
+                        value = esame.risultato
+                    )
+                }
+                
+                if (esame.struttura.isNotEmpty()) {
+                    PatientInfoRow(
+                        label = stringResource(Res.string.facility),
+                        value = esame.struttura
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Pediatric history content
+ */
+@Composable
+private fun PediatricHistoryContent(anamnesi: com.narde.gestionaleosteopatabetto.data.database.models.AnamnesiPediatrica) {
+    // Pregnancy
+    anamnesi.gravidanza?.let { gravidanza ->
+        PatientInfoRow(
+            label = stringResource(Res.string.pregnancy),
+            value = if (gravidanza.complicazioni) stringResource(Res.string.complications) else stringResource(Res.string.not_present)
+        )
+        
+        if (gravidanza.note.isNotEmpty()) {
+            PatientInfoRow(
+                label = stringResource(Res.string.general_notes),
+                value = gravidanza.note
+            )
+        }
+    }
+    
+    // Birth
+    anamnesi.parto?.let { parto ->
+        if (parto.tipo.isNotEmpty()) {
+            PatientInfoRow(
+                label = stringResource(Res.string.birth_type),
+                value = parto.tipo
+            )
+        }
+        
+        PatientInfoRow(
+            label = stringResource(Res.string.complications),
+            value = if (parto.complicazioni) stringResource(Res.string.present) else stringResource(Res.string.not_present)
+        )
+        
+        if (parto.pesoNascitaGrammi > 0) {
+            PatientInfoRow(
+                label = stringResource(Res.string.birth_weight_grams),
+                value = parto.pesoNascitaGrammi.toString()
+            )
+        }
+        
+        if (parto.punteggioApgar5min > 0) {
+            PatientInfoRow(
+                label = stringResource(Res.string.apgar_score_5min),
+                value = parto.punteggioApgar5min.toString()
+            )
+        }
+        
+        if (parto.note.isNotEmpty()) {
+            PatientInfoRow(
+                label = stringResource(Res.string.general_notes),
+                value = parto.note
+            )
+        }
+    }
+    
+    // Development
+    anamnesi.sviluppo?.let { sviluppo ->
+        if (sviluppo.primiPassiMesi > 0) {
+            PatientInfoRow(
+                label = stringResource(Res.string.first_steps_months),
+                value = sviluppo.primiPassiMesi.toString()
+            )
+        }
+        
+        if (sviluppo.primeParoleMesi > 0) {
+            PatientInfoRow(
+                label = stringResource(Res.string.first_words_months),
+                value = sviluppo.primeParoleMesi.toString()
+            )
+        }
+        
+        PatientInfoRow(
+            label = stringResource(Res.string.development_problems),
+            value = if (sviluppo.problemiSviluppo) stringResource(Res.string.present) else stringResource(Res.string.not_present)
+        )
+        
+        if (sviluppo.note.isNotEmpty()) {
+            PatientInfoRow(
+                label = stringResource(Res.string.general_notes),
+                value = sviluppo.note
+            )
+        }
+    }
+    
+    // General notes
+    if (anamnesi.noteGenerali.isNotEmpty()) {
+        PatientInfoRow(
+            label = stringResource(Res.string.general_notes),
+            value = anamnesi.noteGenerali
+        )
+    }
 }
