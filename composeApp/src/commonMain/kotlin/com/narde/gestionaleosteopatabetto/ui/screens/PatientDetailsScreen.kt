@@ -34,7 +34,6 @@ import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ConsentType
-import com.narde.gestionaleosteopatabetto.domain.usecases.UpdatePatientUseCase
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -386,11 +385,54 @@ private fun ClinicalHistoryTabContent(
     onEditModeChange: (Boolean) -> Unit,
     onPatientUpdated: () -> Unit
 ) {
+    val clinicalHistoryViewModel: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryViewModel = viewModel()
+    val clinicalHistoryUiState by clinicalHistoryViewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    
+    // Initialize the clinical history form when database patient is available
+    LaunchedEffect(databasePatient) {
+        databasePatient?.let {
+            clinicalHistoryViewModel.initializeWithPatient(it)
+        }
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Success message
+        if (clinicalHistoryUiState.isUpdateSuccessful) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = stringResource(Res.string.patient_update_success_message),
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        // Error message
+        if (clinicalHistoryUiState.errorMessage.isNotEmpty()) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = clinicalHistoryUiState.errorMessage,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+        
         // Edit/Save/Cancel buttons for clinical history
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -421,22 +463,46 @@ private fun ClinicalHistoryTabContent(
                 // Save button
                 TextButton(
                     onClick = {
-                        // TODO: Implement clinical history save functionality
-                        onEditModeChange(false)
-                        onPatientUpdated()
+                        clinicalHistoryViewModel.updateClinicalHistory {
+                            onEditModeChange(false)
+                            onPatientUpdated()
+                        }
                     },
+                    enabled = !clinicalHistoryUiState.isUpdating && !clinicalHistoryUiState.isUpdateSuccessful,
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(Res.string.save),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    when {
+                        clinicalHistoryUiState.isUpdating -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                        clinicalHistoryUiState.isUpdateSuccessful -> {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(Res.string.patient_updated_success),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        else -> {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(Res.string.save_changes),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = stringResource(Res.string.save),
+                        text = when {
+                            clinicalHistoryUiState.isUpdating -> stringResource(Res.string.updating)
+                            clinicalHistoryUiState.isUpdateSuccessful -> stringResource(Res.string.patient_updated_success)
+                            else -> stringResource(Res.string.save_changes)
+                        },
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -467,26 +533,11 @@ private fun ClinicalHistoryTabContent(
         // Content based on edit mode
         if (isEditMode) {
             // Edit form for clinical history
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // TODO: Implement clinical history edit form
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Text(
-                        text = "Clinical History Edit Form - Coming Soon",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            com.narde.gestionaleosteopatabetto.ui.components.ClinicalHistoryEditForm(
+                uiState = clinicalHistoryUiState,
+                viewModel = clinicalHistoryViewModel,
+                focusManager = focusManager
+            )
         } else {
             // View mode
             Column(
