@@ -8,11 +8,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
+import com.narde.gestionaleosteopatabetto.data.database.RealmConfig
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient as DatabasePatient
 import com.narde.gestionaleosteopatabetto.data.database.models.*
 import com.narde.gestionaleosteopatabetto.data.database.utils.createDatabaseUtils
-import io.realm.kotlin.ext.realmListOf
+import io.realm.kotlin.ext.query
 
 /**
  * ViewModel for Clinical History editing functionality
@@ -170,14 +171,17 @@ class ClinicalHistoryViewModel : ViewModel() {
             if (isDatabaseSupported()) {
                 val repository = DatabaseInitializer.getPatientRepository()
                 repository?.let {
-                    val patient = it.getPatientById(state.patientId)
-                    if (patient != null) {
-                        // Update clinical history
-                        patient.storiaClinica = state.toStoriaClinica()
-                        it.savePatient(patient)
-                        true
-                    } else {
-                        false
+                    // Perform the entire operation within a single write transaction
+                    RealmConfig.realm.write {
+                        val patient = query<DatabasePatient>("idPaziente == $0", state.patientId).find().firstOrNull()
+                        if (patient != null) {
+                            // Update existing clinical history within the same transaction
+                            updateExistingClinicalHistoryInTransaction(patient.storiaClinica, state)
+                            // The patient is automatically saved when the transaction commits
+                            true
+                        } else {
+                            false
+                        }
                     }
                 } ?: false
             } else {
@@ -185,78 +189,78 @@ class ClinicalHistoryViewModel : ViewModel() {
             }
         } catch (e: Exception) {
             println("Error updating clinical history: ${e.message}")
+            e.printStackTrace()
             false
         }
     }
 }
 
 /**
- * Extension to convert UI state to StoriaClinica model
+ * Update existing clinical history with new values while preserving existing data
+ * This function must be called within a Realm write transaction
  */
-private fun ClinicalHistoryUiState.toStoriaClinica(): StoriaClinica {
-    return StoriaClinica().apply {
-        // Chronic conditions
-        patologieCroniche = PatologieCroniche().apply {
-            allergieFarmaci = AllergieFarmaci().apply {
-                presente = hasDrugAllergies
-                listaAllergie = if (drugAllergiesList.isNotEmpty()) {
-                    realmListOf(*drugAllergiesList.split(",").map { it.trim() }.toTypedArray())
-                } else {
-                    realmListOf()
-                }
-            }
-            diabete = Diabete().apply {
-                presente = hasDiabetes
-                tipologia = diabetesType
-            }
-            ipertiroidismo = hasHyperthyroidism
-            cardiopatia = hasHeartDisease
-            ipertensioneArteriosa = hasHypertension
-        }
-        
-        // Lifestyle factors
-        stileVita = StileVita().apply {
-            tabagismo = Tabagismo().apply {
-                stato = smokingStatus
-                sigaretteGiorno = cigarettesPerDay.toIntOrNull() ?: 0
-                anniFumo = yearsSmoking.toIntOrNull() ?: 0
-            }
-            lavoro = workType
-            professione = profession
-            oreLavoroGiorno = workHoursPerDay.toIntOrNull() ?: 0
-            attivitaSportiva = AttivitaSportiva().apply {
-                presente = hasPhysicalActivity
-                sport = if (sportsList.isNotEmpty()) {
-                    realmListOf(*sportsList.split(",").map { it.trim() }.toTypedArray())
-                } else {
-                    realmListOf()
-                }
-                frequenza = activityFrequency
-                intensita = activityIntensity
+private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: StoriaClinica?, state: ClinicalHistoryUiState) {
+    if (existingStoriaClinica == null) return
+    
+    // Update chronic conditions
+    existingStoriaClinica.patologieCroniche?.let { patologie ->
+        patologie.allergieFarmaci?.let { allergie ->
+            allergie.presente = state.hasDrugAllergies
+            allergie.listaAllergie.clear()
+            if (state.drugAllergiesList.isNotEmpty()) {
+                allergie.listaAllergie.addAll(state.drugAllergiesList.split(",").map { it.trim() })
             }
         }
-        
-        // Pediatric history
-        anamnesiPediatrica = AnamnesiPediatrica().apply {
-            gravidanza = Gravidanza().apply {
-                complicazioni = pregnancyComplications
-                note = pregnancyNotes
-            }
-            parto = Parto().apply {
-                tipo = birthType
-                complicazioni = birthComplications
-                pesoNascitaGrammi = birthWeight.toIntOrNull() ?: 0
-                punteggioApgar5min = apgarScore.toIntOrNull() ?: 0
-                note = birthNotes
-            }
-            sviluppo = Sviluppo().apply {
-                primiPassiMesi = firstStepsMonths.toIntOrNull() ?: 0
-                primeParoleMesi = firstWordsMonths.toIntOrNull() ?: 0
-                problemiSviluppo = developmentProblems
-                note = developmentNotes
-            }
-            noteGenerali = pediatricGeneralNotes
+        patologie.diabete?.let { diabete ->
+            diabete.presente = state.hasDiabetes
+            diabete.tipologia = state.diabetesType
         }
+        patologie.ipertiroidismo = state.hasHyperthyroidism
+        patologie.cardiopatia = state.hasHeartDisease
+        patologie.ipertensioneArteriosa = state.hasHypertension
+    }
+    
+    // Update lifestyle factors
+    existingStoriaClinica.stileVita?.let { stileVita ->
+        stileVita.tabagismo?.let { tabagismo ->
+            tabagismo.stato = state.smokingStatus
+            tabagismo.sigaretteGiorno = state.cigarettesPerDay.toIntOrNull() ?: 0
+            tabagismo.anniFumo = state.yearsSmoking.toIntOrNull() ?: 0
+        }
+        stileVita.lavoro = state.workType
+        stileVita.professione = state.profession
+        stileVita.oreLavoroGiorno = state.workHoursPerDay.toIntOrNull() ?: 0
+        stileVita.attivitaSportiva?.let { attivita ->
+            attivita.presente = state.hasPhysicalActivity
+            attivita.sport.clear()
+            if (state.sportsList.isNotEmpty()) {
+                attivita.sport.addAll(state.sportsList.split(",").map { it.trim() })
+            }
+            attivita.frequenza = state.activityFrequency
+            attivita.intensita = state.activityIntensity
+        }
+    }
+    
+    // Update pediatric history
+    existingStoriaClinica.anamnesiPediatrica?.let { anamnesi ->
+        anamnesi.gravidanza?.let { gravidanza ->
+            gravidanza.complicazioni = state.pregnancyComplications
+            gravidanza.note = state.pregnancyNotes
+        }
+        anamnesi.parto?.let { parto ->
+            parto.tipo = state.birthType
+            parto.complicazioni = state.birthComplications
+            parto.pesoNascitaGrammi = state.birthWeight.toIntOrNull() ?: 0
+            parto.punteggioApgar5min = state.apgarScore.toIntOrNull() ?: 0
+            parto.note = state.birthNotes
+        }
+        anamnesi.sviluppo?.let { sviluppo ->
+            sviluppo.primiPassiMesi = state.firstStepsMonths.toIntOrNull() ?: 0
+            sviluppo.primeParoleMesi = state.firstWordsMonths.toIntOrNull() ?: 0
+            sviluppo.problemiSviluppo = state.developmentProblems
+            sviluppo.note = state.developmentNotes
+        }
+        anamnesi.noteGenerali = state.pediatricGeneralNotes
     }
 }
 
