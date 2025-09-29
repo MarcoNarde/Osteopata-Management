@@ -1353,12 +1353,10 @@ private fun ChronicConditionsContent(patologie: com.narde.gestionaleosteopatabet
                 value = stringResource(Res.string.present)
             )
             if (allergie.listaAllergie.isNotEmpty()) {
-                allergie.listaAllergie.forEach { allergia ->
-                    PatientInfoRow(
-                        label = "  •",
-                        value = allergia
-                    )
-                }
+                PatientInfoRow(
+                    label = stringResource(Res.string.allergies_list),
+                    value = allergie.listaAllergie.joinToString(", ")
+                )
             }
         } else {
             PatientInfoRow(
@@ -1487,12 +1485,10 @@ private fun LifestyleFactorsContent(stileVita: com.narde.gestionaleosteopatabett
             )
             
             if (sport.sport.isNotEmpty()) {
-                sport.sport.forEach { sportName ->
-                    PatientInfoRow(
-                        label = stringResource(Res.string.sports),
-                        value = sportName
-                    )
-                }
+                PatientInfoRow(
+                    label = stringResource(Res.string.sports),
+                    value = sport.sport.joinToString(", ")
+                )
             }
             
             if (sport.frequenza.isNotEmpty()) {

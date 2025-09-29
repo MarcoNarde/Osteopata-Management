@@ -225,6 +225,15 @@
     <string name="first_words_months">First Words (months)</string>
     <string name="development_problems">Development Problems</string>
     
+    <!-- Additional clinical history strings -->
+    <string name="allergies_list">Allergies List</string>
+    <string name="pharmacological_therapies_note">Pharmacological therapies are currently managed through the view mode. Future updates will include full editing capabilities.</string>
+    <string name="interventions_traumas_note">Interventions and traumas are currently managed through the view mode. Future updates will include full editing capabilities.</string>
+    <string name="diagnostic_tests_note">Diagnostic tests are currently managed through the view mode. Future updates will include full editing capabilities.</string>
+    <string name="add_medication">Add Medication</string>
+    <string name="add_intervention">Add Intervention</string>
+    <string name="add_diagnostic_test">Add Diagnostic Test</string>
+    
     <!-- No data messages -->
     <string name="no_clinical_history">No clinical history available</string>
     <string name="no_chronic_conditions">No chronic conditions recorded</string>

@@ -55,6 +55,36 @@ fun ClinicalHistoryEditForm(
         }
         
         item {
+            // Pharmacological Therapies Section
+            ClinicalHistorySection(
+                title = stringResource(Res.string.pharmacological_therapies),
+                content = {
+                    PharmacologicalTherapiesEditContent(uiState, viewModel, focusManager)
+                }
+            )
+        }
+        
+        item {
+            // Interventions & Traumas Section
+            ClinicalHistorySection(
+                title = stringResource(Res.string.interventions_traumas),
+                content = {
+                    InterventionsTraumasEditContent(uiState, viewModel, focusManager)
+                }
+            )
+        }
+        
+        item {
+            // Diagnostic Tests Section
+            ClinicalHistorySection(
+                title = stringResource(Res.string.diagnostic_tests),
+                content = {
+                    DiagnosticTestsEditContent(uiState, viewModel, focusManager)
+                }
+            )
+        }
+        
+        item {
             // Pediatric History Section
             ClinicalHistorySection(
                 title = stringResource(Res.string.pediatric_history),
@@ -467,6 +497,102 @@ private fun PediatricHistoryEditContent(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(
                 onDone = { focusManager.clearFocus() }
+            )
+        )
+    }
+}
+
+/**
+ * Pharmacological Therapies Edit Content
+ */
+@Composable
+private fun PharmacologicalTherapiesEditContent(
+    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    viewModel: ClinicalHistoryViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(Res.string.pharmacological_therapies_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        // Note: For now, pharmacological therapies are managed through the view mode
+        // Future enhancement: Add dynamic list management for medications
+        OutlinedTextField(
+            value = "", // Placeholder for future implementation
+            onValueChange = { },
+            label = { Text(stringResource(Res.string.add_medication)) },
+            enabled = false,
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+        )
+    }
+}
+
+/**
+ * Interventions & Traumas Edit Content
+ */
+@Composable
+private fun InterventionsTraumasEditContent(
+    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    viewModel: ClinicalHistoryViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(Res.string.interventions_traumas_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        // Note: For now, interventions are managed through the view mode
+        // Future enhancement: Add dynamic list management for interventions
+        OutlinedTextField(
+            value = "", // Placeholder for future implementation
+            onValueChange = { },
+            label = { Text(stringResource(Res.string.add_intervention)) },
+            enabled = false,
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+        )
+    }
+}
+
+/**
+ * Diagnostic Tests Edit Content
+ */
+@Composable
+private fun DiagnosticTestsEditContent(
+    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    viewModel: ClinicalHistoryViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(Res.string.diagnostic_tests_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        // Note: For now, diagnostic tests are managed through the view mode
+        // Future enhancement: Add dynamic list management for tests
+        OutlinedTextField(
+            value = "", // Placeholder for future implementation
+            onValueChange = { },
+            label = { Text(stringResource(Res.string.add_diagnostic_test)) },
+            enabled = false,
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
     }

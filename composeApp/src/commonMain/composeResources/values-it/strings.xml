@@ -225,6 +225,15 @@
     <string name="first_words_months">Prime Parole (mesi)</string>
     <string name="development_problems">Problemi di Sviluppo</string>
     
+    <!-- Additional clinical history strings -->
+    <string name="allergies_list">Elenco Allergie</string>
+    <string name="pharmacological_therapies_note">Le terapie farmacologiche sono attualmente gestite tramite la modalità visualizzazione. I futuri aggiornamenti includeranno funzionalità complete di modifica.</string>
+    <string name="interventions_traumas_note">Gli interventi e i traumi sono attualmente gestiti tramite la modalità visualizzazione. I futuri aggiornamenti includeranno funzionalità complete di modifica.</string>
+    <string name="diagnostic_tests_note">Gli esami strumentali sono attualmente gestiti tramite la modalità visualizzazione. I futuri aggiornamenti includeranno funzionalità complete di modifica.</string>
+    <string name="add_medication">Aggiungi Farmaco</string>
+    <string name="add_intervention">Aggiungi Intervento</string>
+    <string name="add_diagnostic_test">Aggiungi Esame</string>
+    
     <!-- No data messages -->
     <string name="no_clinical_history">Nessuna storia clinica disponibile</string>
     <string name="no_chronic_conditions">Nessuna patologia cronica registrata</string>
