@@ -507,8 +507,8 @@ private fun PediatricHistoryEditContent(
  */
 @Composable
 private fun PharmacologicalTherapiesEditContent(
-    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
-    viewModel: ClinicalHistoryViewModel,
+    _uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    _viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -539,8 +539,8 @@ private fun PharmacologicalTherapiesEditContent(
  */
 @Composable
 private fun InterventionsTraumasEditContent(
-    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
-    viewModel: ClinicalHistoryViewModel,
+    _uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    _viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -571,8 +571,8 @@ private fun InterventionsTraumasEditContent(
  */
 @Composable
 private fun DiagnosticTestsEditContent(
-    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
-    viewModel: ClinicalHistoryViewModel,
+    _uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    _viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

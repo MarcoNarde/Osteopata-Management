@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.narde.gestionaleosteopatabetto.data.model.Patient
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient as DatabasePatient
@@ -164,18 +163,18 @@ private fun PatientDataTabs(
         {
             if (isDatabaseSupported()) {
                 val repository = DatabaseInitializer.getPatientRepository()
-                repository?.let { repo ->
+                if (repository != null) {
+                    val patientId = currentDatabasePatient?.idPaziente ?: patient.id
+                    
                     try {
-                        val patientId = currentDatabasePatient?.idPaziente ?: patient.id
-                        val updatedDbPatient = repo.getPatientById(patientId)
+                        val updatedDbPatient = repository.getPatientById(patientId)
                         if (updatedDbPatient != null) {
                             currentDatabasePatient = updatedDbPatient
                             val databaseUtils = createDatabaseUtils()
                             currentUIPatient = databaseUtils.toUIPatient(updatedDbPatient)
-                            println("✅ Patient data reloaded successfully: ${updatedDbPatient.datiPersonali?.nome} ${updatedDbPatient.datiPersonali?.cognome}")
                         }
                     } catch (e: Exception) {
-                        println("Error reloading patient data: ${e.message}")
+                        // Error reloading patient data - could be logged to a proper logging system
                     }
                 }
             }
