@@ -13,6 +13,9 @@ import kotlinx.datetime.toLocalDateTime
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient as DatabasePatient
+import com.narde.gestionaleosteopatabetto.data.database.models.Genitori
+import com.narde.gestionaleosteopatabetto.data.database.models.Padre
+import com.narde.gestionaleosteopatabetto.data.database.models.Madre
 import com.narde.gestionaleosteopatabetto.data.database.utils.*
 import com.narde.gestionaleosteopatabetto.utils.DateUtils
 
@@ -285,22 +288,52 @@ private fun EditPatientUiState.toDatabaseModel(databaseUtils: DatabaseUtilsInter
             dataConsenso = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
         }
         
-        // Add parent information only for minors
-        if (isMinor && (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank() || 
-                        motherFirstName.isNotBlank() || motherLastName.isNotBlank())) {
-            genitori?.apply {
-                if (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank()) {
-                    padre?.apply {
-                        nome = fatherFirstName
-                        cognome = fatherLastName
-                    }
+        // Handle parent information based on patient age and data availability
+        if (isMinor) {
+            // Patient is a minor - ensure parent data structure exists and populate it
+            if (genitori == null) {
+                genitori = Genitori().apply {
+                    padre = Padre()
+                    madre = Madre()
                 }
-                if (motherFirstName.isNotBlank() || motherLastName.isNotBlank()) {
-                    madre?.apply {
-                        nome = motherFirstName
-                        cognome = motherLastName
-                    }
+            }
+            
+            // Populate father information if provided
+            if (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank()) {
+                genitori?.padre?.apply {
+                    nome = fatherFirstName
+                    cognome = fatherLastName
                 }
+            } else {
+                // Clear father information if not provided
+                genitori?.padre?.apply {
+                    nome = ""
+                    cognome = ""
+                }
+            }
+            
+            // Populate mother information if provided
+            if (motherFirstName.isNotBlank() || motherLastName.isNotBlank()) {
+                genitori?.madre?.apply {
+                    nome = motherFirstName
+                    cognome = motherLastName
+                }
+            } else {
+                // Clear mother information if not provided
+                genitori?.madre?.apply {
+                    nome = ""
+                    cognome = ""
+                }
+            }
+        } else {
+            // Patient is an adult - clear parent information
+            genitori?.padre?.apply {
+                nome = ""
+                cognome = ""
+            }
+            genitori?.madre?.apply {
+                nome = ""
+                cognome = ""
             }
         }
     }
