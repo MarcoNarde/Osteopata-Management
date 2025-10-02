@@ -1,6 +1,9 @@
 package com.narde.gestionaleosteopatabetto.domain.models
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Domain model for Patient - represents the business entity
@@ -26,10 +29,21 @@ data class Patient(
         get() = "$firstName $lastName"
     
     val age: Int?
-        get() = null // TODO: Implement age calculation when kotlinx.datetime issues are resolved
+        get() = birthDate?.let { birth ->
+            val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            var calculatedAge = currentDate.year - birth.year
+            if (currentDate.monthNumber < birth.monthNumber || 
+                (currentDate.monthNumber == birth.monthNumber && currentDate.dayOfMonth < birth.dayOfMonth)) {
+                calculatedAge--
+            }
+            calculatedAge
+        }
     
     val isMinor: Boolean
-        get() = false // TODO: Implement minor check when age calculation is working
+        get() {
+            val currentAge = age
+            return currentAge != null && currentAge < 18
+        }
 }
 
 enum class Gender {

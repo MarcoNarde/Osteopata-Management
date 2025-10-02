@@ -23,6 +23,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import com.narde.gestionaleosteopatabetto.data.model.Patient
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient as DatabasePatient
 import com.narde.gestionaleosteopatabetto.data.database.utils.*
@@ -667,9 +671,22 @@ private fun ViewPatientInfo(
             )
 
             // Calculate and display age properly
-            databasePatient?.dati_personali?.data_nascita?.takeIf { it.isNotEmpty() }
-                ?.let { birthDate ->
-                    val calculatedAge = calculateAgeFromBirthDate(birthDate)
+            databasePatient?.datiPersonali?.dataNascita?.takeIf { it.isNotEmpty() }
+                ?.let { birthDateStr ->
+                    val calculatedAge = try {
+                        // Database stores dates in ISO format, so parse directly
+                        val birthDate = LocalDate.parse(birthDateStr)
+                        val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        
+                        var age = currentDate.year - birthDate.year
+                        if (currentDate.monthNumber < birthDate.monthNumber || 
+                            (currentDate.monthNumber == birthDate.monthNumber && currentDate.dayOfMonth < birthDate.dayOfMonth)) {
+                            age--
+                        }
+                        age
+                    } catch (e: Exception) {
+                        0
+                    }
                     if (calculatedAge > 0) {
                         PatientInfoRow(
                             label = stringResource(Res.string.patient_age),
@@ -680,16 +697,16 @@ private fun ViewPatientInfo(
 
             // Additional fields from database
             databasePatient?.let { dbPatient ->
-                if (dbPatient.dati_personali?.data_nascita?.isNotEmpty() == true) {
+                if (dbPatient.datiPersonali?.dataNascita?.isNotEmpty() == true) {
                     PatientInfoRow(
                         label = stringResource(Res.string.birth_date_label),
                         // Convert ISO format from database to Italian format for display
                         value = DateUtils.convertIsoToItalianFormat(
-                            dbPatient.dati_personali?.data_nascita ?: ""
+                            dbPatient.datiPersonali?.dataNascita ?: ""
                         )
                     )
                 }
-                dbPatient.dati_personali?.sesso?.takeIf { it.isNotEmpty() }?.let {
+                dbPatient.datiPersonali?.sesso?.takeIf { it.isNotEmpty() }?.let {
                     PatientInfoRow(
                         label = stringResource(Res.string.gender),
                         value = if (it == "M") stringResource(Res.string.gender_male) else stringResource(
@@ -697,13 +714,13 @@ private fun ViewPatientInfo(
                         )
                     )
                 }
-                dbPatient.dati_personali?.luogo_nascita?.takeIf { it.isNotEmpty() }?.let {
+                dbPatient.datiPersonali?.luogoNascita?.takeIf { it.isNotEmpty() }?.let {
                     PatientInfoRow(
                         label = stringResource(Res.string.place_of_birth_label),
                         value = it
                     )
                 }
-                dbPatient.dati_personali?.codice_fiscale?.takeIf { it.isNotEmpty() }?.let {
+                dbPatient.datiPersonali?.codiceFiscale?.takeIf { it.isNotEmpty() }?.let {
                     PatientInfoRow(
                         label = stringResource(Res.string.tax_code_label),
                         value = it
@@ -716,7 +733,7 @@ private fun ViewPatientInfo(
     Spacer(modifier = Modifier.height(16.dp))
 
     // Anthropometric Measurements Section
-    databasePatient?.dati_personali?.let { personalData ->
+    databasePatient?.datiPersonali?.let { personalData ->
         if (personalData.altezza > 0 || personalData.peso > 0.0 || personalData.latoDominante.isNotEmpty()) {
             PatientInfoSection(
                 title = stringResource(Res.string.anthropometric_measurements),
@@ -882,6 +899,80 @@ private fun ViewPatientInfo(
                 }
             }
         )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Parent Information Section (only for minors)
+    if (patient.age > 0 && patient.age < 18) {
+        patient.parentInfo?.let { parentInfo ->
+            PatientInfoSection(
+                title = stringResource(Res.string.parent_information_minor, patient.age.toString()),
+                content = {
+                    // Father information
+                    parentInfo.father?.let { father ->
+                        if (father.firstName.isNotEmpty() || father.lastName.isNotEmpty()) {
+                            PatientInfoRow(
+                                label = stringResource(Res.string.father_info),
+                                value = "${father.firstName} ${father.lastName}".trim()
+                            )
+                            
+                            if (father.phone.isNotEmpty()) {
+                                PatientInfoRow(
+                                    label = "${stringResource(Res.string.father_info)} - ${stringResource(Res.string.phone_number)}",
+                                    value = father.phone
+                                )
+                            }
+                            
+                            if (father.email.isNotEmpty()) {
+                                PatientInfoRow(
+                                    label = "${stringResource(Res.string.father_info)} - ${stringResource(Res.string.email)}",
+                                    value = father.email
+                                )
+                            }
+                            
+                            if (father.profession.isNotEmpty()) {
+                                PatientInfoRow(
+                                    label = "${stringResource(Res.string.father_info)} - Profession",
+                                    value = father.profession
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Mother information
+                    parentInfo.mother?.let { mother ->
+                        if (mother.firstName.isNotEmpty() || mother.lastName.isNotEmpty()) {
+                            PatientInfoRow(
+                                label = stringResource(Res.string.mother_info),
+                                value = "${mother.firstName} ${mother.lastName}".trim()
+                            )
+                            
+                            if (mother.phone.isNotEmpty()) {
+                                PatientInfoRow(
+                                    label = "${stringResource(Res.string.mother_info)} - ${stringResource(Res.string.phone_number)}",
+                                    value = mother.phone
+                                )
+                            }
+                            
+                            if (mother.email.isNotEmpty()) {
+                                PatientInfoRow(
+                                    label = "${stringResource(Res.string.mother_info)} - ${stringResource(Res.string.email)}",
+                                    value = mother.email
+                                )
+                            }
+                            
+                            if (mother.profession.isNotEmpty()) {
+                                PatientInfoRow(
+                                    label = "${stringResource(Res.string.mother_info)} - Profession",
+                                    value = mother.profession
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        }
     }
 }
 

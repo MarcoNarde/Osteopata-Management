@@ -99,13 +99,45 @@ class DatabaseUtils : DatabaseUtilsInterface {
             }
         } ?: 0
         
+        // Convert parent information if available
+        val parentInfo = databasePatient.genitori?.let { genitori ->
+            val father = genitori.padre?.let { padre ->
+                if (padre.nome.isNotEmpty() || padre.cognome.isNotEmpty()) {
+                    com.narde.gestionaleosteopatabetto.data.model.Parent(
+                        firstName = padre.nome,
+                        lastName = padre.cognome,
+                        phone = padre.telefono,
+                        email = padre.email,
+                        profession = padre.professione
+                    )
+                } else null
+            }
+            
+            val mother = genitori.madre?.let { madre ->
+                if (madre.nome.isNotEmpty() || madre.cognome.isNotEmpty()) {
+                    com.narde.gestionaleosteopatabetto.data.model.Parent(
+                        firstName = madre.nome,
+                        lastName = madre.cognome,
+                        phone = madre.telefono,
+                        email = madre.email,
+                        profession = madre.professione
+                    )
+                } else null
+            }
+            
+            if (father != null || mother != null) {
+                com.narde.gestionaleosteopatabetto.data.model.ParentInfo(father, mother)
+            } else null
+        }
+        
         return UIPatient(
             id = databasePatient.idPaziente,
             name = "${databasePatient.datiPersonali?.nome ?: ""} ${databasePatient.datiPersonali?.cognome ?: ""}".trim(),
             phone = databasePatient.datiPersonali?.telefonoPaziente ?: "",
             email = databasePatient.datiPersonali?.emailPaziente ?: "",
             age = age,
-            bmi = databasePatient.datiPersonali?.bmi
+            bmi = databasePatient.datiPersonali?.bmi,
+            parentInfo = parentInfo
         )
     }
     
