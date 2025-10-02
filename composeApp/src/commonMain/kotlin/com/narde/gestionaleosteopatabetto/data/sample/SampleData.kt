@@ -23,11 +23,36 @@ object SampleData {
     
     /**
      * Sample visits list for testing the application
+     * Using the new Visit model structure
      */
     val visits = listOf(
-        Visit("1", "Mario Rossi", "2024-01-15", "09:00", VisitStatus.SCHEDULED, "First consultation"),
-        Visit("2", "Anna Bianchi", "2024-01-15", "10:30", VisitStatus.COMPLETED, "Follow-up session"),
-        Visit("3", "Giuseppe Verdi", "2024-01-16", "14:00", VisitStatus.SCHEDULED, "Treatment session"),
-        Visit("4", "Maria Neri", "2024-01-16", "16:00", VisitStatus.SCHEDULED, "Initial assessment")
+        Visit(
+            idVisita = "VIS_001_2024_01_15",
+            idPaziente = "1",
+            dataVisita = "2024-01-15",
+            osteopata = "Roberto Caeran",
+            noteGenerali = "First consultation"
+        ),
+        Visit(
+            idVisita = "VIS_002_2024_01_15",
+            idPaziente = "2", 
+            dataVisita = "2024-01-15",
+            osteopata = "Roberto Caeran",
+            noteGenerali = "Follow-up session"
+        ),
+        Visit(
+            idVisita = "VIS_003_2024_01_16",
+            idPaziente = "3",
+            dataVisita = "2024-01-16", 
+            osteopata = "Roberto Caeran",
+            noteGenerali = "Treatment session"
+        ),
+        Visit(
+            idVisita = "VIS_004_2024_01_16",
+            idPaziente = "4",
+            dataVisita = "2024-01-16",
+            osteopata = "Roberto Caeran", 
+            noteGenerali = "Initial assessment"
+        )
     )
 } 

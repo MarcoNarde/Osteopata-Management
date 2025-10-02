@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Visit
-import com.narde.gestionaleosteopatabetto.data.model.VisitStatus
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -42,11 +41,7 @@ fun VisitCard(visit: Visit) {
                 modifier = Modifier.size(56.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = when (visit.status) {
-                        VisitStatus.SCHEDULED -> MaterialTheme.colorScheme.tertiaryContainer
-                        VisitStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer
-                        VisitStatus.CANCELLED -> MaterialTheme.colorScheme.errorContainer
-                    }
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
                 Box(
@@ -56,11 +51,7 @@ fun VisitCard(visit: Visit) {
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Visit Icon",
-                        tint = when (visit.status) {
-                            VisitStatus.SCHEDULED -> MaterialTheme.colorScheme.onTertiaryContainer
-                            VisitStatus.COMPLETED -> MaterialTheme.colorScheme.onPrimaryContainer
-                            VisitStatus.CANCELLED -> MaterialTheme.colorScheme.onErrorContainer
-                        },
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -72,9 +63,9 @@ fun VisitCard(visit: Visit) {
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Patient name as the main title
+                // Patient ID as the main title
                 Text(
-                    text = visit.patientName,
+                    text = "Paziente: ${visit.idPaziente}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -89,50 +80,38 @@ fun VisitCard(visit: Visit) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(Res.string.visit_date, visit.date),
+                            text = "Data: ${visit.dataVisita}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = stringResource(Res.string.visit_time, visit.time),
+                            text = "Osteopata: ${visit.osteopata}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     
-                    // Visit status chip
+                    // Visit ID chip
                     AssistChip(
                         onClick = { },
                         label = {
                             Text(
-                                text = when (visit.status) {
-                                                VisitStatus.SCHEDULED -> stringResource(Res.string.status_scheduled)
-            VisitStatus.COMPLETED -> stringResource(Res.string.status_completed)
-            VisitStatus.CANCELLED -> stringResource(Res.string.status_cancelled)
-                                },
+                                text = visit.idVisita,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Medium
                             )
                         },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = when (visit.status) {
-                                VisitStatus.SCHEDULED -> MaterialTheme.colorScheme.tertiaryContainer
-                                VisitStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer
-                                VisitStatus.CANCELLED -> MaterialTheme.colorScheme.errorContainer
-                            },
-                            labelColor = when (visit.status) {
-                                VisitStatus.SCHEDULED -> MaterialTheme.colorScheme.onTertiaryContainer
-                                VisitStatus.COMPLETED -> MaterialTheme.colorScheme.onPrimaryContainer
-                                VisitStatus.CANCELLED -> MaterialTheme.colorScheme.onErrorContainer
-                            }
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
                 }
                 
-                if (visit.notes.isNotEmpty()) {
+                if (visit.noteGenerali.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = stringResource(Res.string.visit_notes, visit.notes),
+                        text = "Note: ${visit.noteGenerali}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Normal

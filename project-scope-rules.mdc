@@ -105,7 +105,7 @@ src/
    - ✅ Parent information management for minors
    - ✅ Anthropometric measurements and privacy consents
 
-2. **Visit Management** - **🔄 IN PROGRESS**
+2. **Visit Management** - **✅ DATA MODELS COMPLETED** - **🔄 REPOSITORY & UI IN PROGRESS**
    - Create new visit records
    - Multi-step form for comprehensive data entry
    - Template-based visit types
@@ -173,7 +173,7 @@ src/
 - **Patient Management**: ✅ **COMPLETE** - Full CRUD operations, parent information, clinical history
 - **Database Integration**: ✅ **COMPLETE** - Realm DB with reactive data flow
 - **UI/UX**: ✅ **COMPLETE** - Material 3 design with Italian localization
-- **Visit Management**: 🔄 **IN PROGRESS** - Basic structure exists, needs full implementation
+- **Visit Management**: ✅ **DATA MODELS COMPLETED** - Realm models with validation implemented, repository and UI pending
 - **Data Validation**: 🔄 **PARTIAL** - Basic validation implemented, needs enhancement
 
 When generating code, prioritize:

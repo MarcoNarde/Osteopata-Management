@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Visit
-import com.narde.gestionaleosteopatabetto.data.model.VisitStatus
 import com.narde.gestionaleosteopatabetto.ui.components.VisitCard
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
@@ -28,8 +27,7 @@ import gestionaleosteopatabetto.composeapp.generated.resources.*
 @Composable
 fun VisitsScreen(visits: List<Visit>) {
     // Calculate visit statistics for better overview
-    val scheduledVisits = visits.count { it.status == VisitStatus.SCHEDULED }
-    val completedVisits = visits.count { it.status == VisitStatus.COMPLETED }
+    val totalVisits = visits.size
     
     Box(
         modifier = Modifier
@@ -65,7 +63,7 @@ fun VisitsScreen(visits: List<Visit>) {
                             modifier = Modifier.size(28.dp)
                         )
                         Text(
-                            text = stringResource(Res.string.visits_title),
+                            text = "Visite",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -79,46 +77,16 @@ fun VisitsScreen(visits: List<Visit>) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
-                            // Scheduled visits stat
-                            Column {
-                                Text(
-                                    text = scheduledVisits.toString(),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "Programmate",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                            
-                            // Completed visits stat
-                            Column {
-                                Text(
-                                    text = completedVisits.toString(),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "Completate",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                            
                             // Total visits stat
                             Column {
                                 Text(
-                                    text = visits.size.toString(),
+                                    text = totalVisits.toString(),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = "Totale",
+                                    text = "Totale Visite",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                 )

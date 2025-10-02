@@ -41,15 +41,21 @@ object RealmConfig {
                 Gravidanza::class,
                 Parto::class,
                 Sviluppo::class,
-                ProblemaSignificativo::class
+                ProblemaSignificativo::class,
+                // Visit models
+                Visita::class,
+                DatiVisitaCorrente::class,
+                MotivoConsulto::class,
+                MotivoPrincipale::class,
+                MotivoSecondario::class
             )
         )
         .name("gestionale_osteopata.realm") // Database file name
-        .schemaVersion(3) // Incremented schema version to handle clinical history changes
+        .schemaVersion(4) // Incremented schema version to handle visit models
         .deleteRealmIfMigrationNeeded() // Delete old database if migration is required
         .build()
         
-        println("RealmConfig: Initializing Realm database with schema version 3")
+        println("RealmConfig: Initializing Realm database with schema version 4")
         Realm.open(config)
     }
     
