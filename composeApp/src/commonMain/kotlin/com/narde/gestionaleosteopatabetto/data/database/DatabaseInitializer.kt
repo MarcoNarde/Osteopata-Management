@@ -1,6 +1,8 @@
 package com.narde.gestionaleosteopatabetto.data.database
 
 import com.narde.gestionaleosteopatabetto.data.database.repository.PatientRepositoryInterface
+import com.narde.gestionaleosteopatabetto.data.database.repository.VisitRepositoryInterface
+import com.narde.gestionaleosteopatabetto.data.database.repository.VisitRepository
 import com.narde.gestionaleosteopatabetto.data.database.models.createPatientRepository
 import com.narde.gestionaleosteopatabetto.data.database.utils.createDatabaseUtils
 import kotlin.getValue
@@ -14,6 +16,10 @@ object DatabaseInitializer {
     
     private val _patientRepository by lazy { 
         if (isDatabaseSupported()) createPatientRepository() else null 
+    }
+    
+    private val _visitRepository by lazy { 
+        if (isDatabaseSupported()) VisitRepository() else null 
     }
     
     private val _databaseUtils by lazy { createDatabaseUtils() }
@@ -77,6 +83,12 @@ object DatabaseInitializer {
      * Returns null if database is not supported
      */
     fun getPatientRepository(): PatientRepositoryInterface? = _patientRepository
+    
+    /**
+     * Get the visit repository if supported on current platform
+     * Returns null if database is not supported
+     */
+    fun getVisitRepository(): VisitRepositoryInterface? = _visitRepository
     
     /**
      * Clear all patients from the database
