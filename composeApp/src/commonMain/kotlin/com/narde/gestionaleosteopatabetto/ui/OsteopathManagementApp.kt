@@ -19,6 +19,7 @@ import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitDetailsScreen
+import com.narde.gestionaleosteopatabetto.ui.screens.AddVisitScreen
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -42,6 +43,7 @@ fun OsteopathManagementApp() {
     var showPatientDetails by remember { mutableStateOf(false) }
     var showVisitDetails by remember { mutableStateOf(false) }
     var selectedVisit by remember { mutableStateOf<Visit?>(null) }
+    var showAddVisitScreen by remember { mutableStateOf(false) }
     
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
@@ -171,6 +173,19 @@ fun OsteopathManagementApp() {
                 )
             }
         }
+        showAddVisitScreen -> {
+            AddVisitScreen(
+                patients = patients,
+                onBackClick = {
+                    showAddVisitScreen = false
+                },
+                onVisitSaved = { visit ->
+                    showAddVisitScreen = false
+                    // Refresh visits list - TODO: Implement visits refresh
+                    println("Visit saved: $visit")
+                }
+            )
+        }
         showPatientDetails && selectedDatabasePatient != null && selectedPatient != null -> {
             PatientDetailsScreen(
                 patient = selectedPatient!!,
@@ -204,16 +219,31 @@ fun OsteopathManagementApp() {
             // Main application content with FAB
             Scaffold(
                 floatingActionButton = {
-                    // Only show FAB on Patients tab
-                    if (selectedTabIndex == 0) {
-                        FloatingActionButton(
-                            onClick = { showAddPatientScreen = true },
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ) {
-                            Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Add,
-                                contentDescription = stringResource(Res.string.add_patient)
-                            )
+                    // Show FAB for both tabs
+                    when (selectedTabIndex) {
+                        0 -> {
+                            // Add patient FAB
+                            FloatingActionButton(
+                                onClick = { showAddPatientScreen = true },
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                                    contentDescription = stringResource(Res.string.add_patient)
+                                )
+                            }
+                        }
+                        1 -> {
+                            // Add visit FAB
+                            FloatingActionButton(
+                                onClick = { showAddVisitScreen = true },
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                                    contentDescription = "Aggiungi Visita"
+                                )
+                            }
                         }
                     }
                 }
