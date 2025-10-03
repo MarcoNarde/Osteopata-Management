@@ -1,5 +1,6 @@
 package com.narde.gestionaleosteopatabetto.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,18 +12,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Visit
-import org.jetbrains.compose.resources.stringResource
-import gestionaleosteopatabetto.composeapp.generated.resources.Res
-import gestionaleosteopatabetto.composeapp.generated.resources.*
 
 /**
  * Card component to display visit information
  * Shows visit date, patient, and status with visual indicators
  */
 @Composable
-fun VisitCard(visit: Visit) {
+fun VisitCard(
+    visit: Visit,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(

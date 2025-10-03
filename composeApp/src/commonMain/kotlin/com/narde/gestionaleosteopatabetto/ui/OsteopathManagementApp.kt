@@ -18,6 +18,7 @@ import com.narde.gestionaleosteopatabetto.ui.screens.AddPatientScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitsScreen
+import com.narde.gestionaleosteopatabetto.ui.screens.VisitDetailsScreen
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -36,7 +37,11 @@ fun OsteopathManagementApp() {
     var showAddPatientScreen by remember { mutableStateOf(false) }
     var selectedPatient by remember { mutableStateOf<Patient?>(null) }
     var selectedDatabasePatient by remember { mutableStateOf<com.narde.gestionaleosteopatabetto.data.database.models.Patient?>(null) }
+
+
     var showPatientDetails by remember { mutableStateOf(false) }
+    var showVisitDetails by remember { mutableStateOf(false) }
+    var selectedVisit by remember { mutableStateOf<Visit?>(null) }
     
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
@@ -136,6 +141,36 @@ fun OsteopathManagementApp() {
 
     // Handle different screen states
     when {
+        showVisitDetails && selectedVisit != null -> {
+            // Find the corresponding patient
+            val patient = patients.find { it.id == selectedVisit!!.idPaziente }
+            if (patient != null) {
+                VisitDetailsScreen(
+                    visit = selectedVisit!!,
+                    patient = patient,
+                    onBackClick = {
+                        showVisitDetails = false
+                        selectedVisit = null
+                    }
+                )
+            } else {
+                // Fallback if patient not found
+                VisitDetailsScreen(
+                    visit = selectedVisit!!,
+                    patient = Patient(
+                        id = selectedVisit!!.idPaziente,
+                        name = "Paziente non trovato",
+                        phone = "",
+                        email = "",
+                        age = 0
+                    ),
+                    onBackClick = {
+                        showVisitDetails = false
+                        selectedVisit = null
+                    }
+                )
+            }
+        }
         showPatientDetails && selectedDatabasePatient != null && selectedPatient != null -> {
             PatientDetailsScreen(
                 patient = selectedPatient!!,
@@ -265,7 +300,13 @@ fun OsteopathManagementApp() {
                                 onDeletePatient = deletePatient
                             )
 
-                            1 -> VisitsScreen(visits = visits)
+                            1 -> VisitsScreen(
+                                visits = visits,
+                                onVisitClick = { visit ->
+                                    selectedVisit = visit
+                                    showVisitDetails = true
+                                }
+                            )
                         }
                     }
                 }

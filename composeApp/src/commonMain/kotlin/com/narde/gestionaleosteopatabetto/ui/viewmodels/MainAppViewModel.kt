@@ -76,7 +76,19 @@ class MainAppViewModel : ViewModel() {
     fun showPatientDetails(patient: com.narde.gestionaleosteopatabetto.data.database.models.Patient) {
         _uiState.value = _uiState.value.copy(
             currentScreen = AppScreen.PatientDetails,
-            selectedDatabasePatient = patient
+            selectedDatabasePatient = patient,
+            selectedVisit = null
+        )
+    }
+    
+    /**
+     * Navigation: Show visit details
+     */
+    fun showVisitDetails(visit: Visit) {
+        _uiState.value = _uiState.value.copy(
+            currentScreen = AppScreen.VisitDetails,
+            selectedVisit = visit,
+            selectedDatabasePatient = null
         )
     }
     
@@ -86,7 +98,8 @@ class MainAppViewModel : ViewModel() {
     fun navigateBack() {
         _uiState.value = _uiState.value.copy(
             currentScreen = AppScreen.Main,
-            selectedDatabasePatient = null
+            selectedDatabasePatient = null,
+            selectedVisit = null
         )
     }
     
@@ -210,6 +223,7 @@ data class MainAppUiState(
     val patients: List<Patient> = emptyList(),
     val visits: List<Visit> = emptyList(),
     val selectedDatabasePatient: com.narde.gestionaleosteopatabetto.data.database.models.Patient? = null,
+    val selectedVisit: Visit? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -220,5 +234,6 @@ data class MainAppUiState(
 enum class AppScreen {
     Main,
     AddPatient,
-    PatientDetails
+    PatientDetails,
+    VisitDetails
 }
