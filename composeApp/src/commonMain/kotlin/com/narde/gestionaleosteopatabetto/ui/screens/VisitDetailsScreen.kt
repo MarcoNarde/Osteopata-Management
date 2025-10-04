@@ -29,6 +29,7 @@ fun VisitDetailsScreen(
     visit: Visit,
     patient: Patient,
     onBackClick: () -> Unit,
+    onEditClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -50,6 +51,15 @@ fun VisitDetailsScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro"
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Modifica visita",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             },

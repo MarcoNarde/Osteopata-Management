@@ -20,6 +20,7 @@ import com.narde.gestionaleosteopatabetto.ui.screens.PatientsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitDetailsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.AddVisitScreen
+import com.narde.gestionaleosteopatabetto.ui.screens.EditVisitScreen
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -48,6 +49,10 @@ fun OsteopathManagementApp() {
     // Delete confirmation state
     var showDeleteVisitDialog by remember { mutableStateOf(false) }
     var visitToDelete by remember { mutableStateOf<Visit?>(null) }
+    
+    // Edit visit state
+    var showEditVisitScreen by remember { mutableStateOf(false) }
+    var visitToEdit by remember { mutableStateOf<Visit?>(null) }
     
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
@@ -222,6 +227,13 @@ fun OsteopathManagementApp() {
                     onBackClick = {
                         showVisitDetails = false
                         selectedVisit = null
+                    },
+                    onEditClick = {
+                        println("OsteopathApp: Edit button clicked - selectedVisit: $selectedVisit")
+                        showVisitDetails = false  // Hide VisitDetailsScreen first
+                        visitToEdit = selectedVisit
+                        showEditVisitScreen = true
+                        println("OsteopathApp: Edit state set - showEditVisitScreen: $showEditVisitScreen, visitToEdit: $visitToEdit")
                     }
                 )
             } else {
@@ -238,6 +250,13 @@ fun OsteopathManagementApp() {
                     onBackClick = {
                         showVisitDetails = false
                         selectedVisit = null
+                    },
+                    onEditClick = {
+                        println("OsteopathApp: Edit button clicked - selectedVisit: $selectedVisit")
+                        showVisitDetails = false  // Hide VisitDetailsScreen first
+                        visitToEdit = selectedVisit
+                        showEditVisitScreen = true
+                        println("OsteopathApp: Edit state set - showEditVisitScreen: $showEditVisitScreen, visitToEdit: $visitToEdit")
                     }
                 )
             }
@@ -257,6 +276,26 @@ fun OsteopathManagementApp() {
                         refreshVisits()
                     }
                     println("Visit saved: $visit - Navigated to visits tab")
+                }
+            )
+        }
+        showEditVisitScreen && visitToEdit != null -> {
+            println("OsteopathApp: Navigating to EditVisitScreen - visitToEdit: $visitToEdit")
+            EditVisitScreen(
+                visit = visitToEdit!!,
+                patients = patients,
+                onBackClick = {
+                    showEditVisitScreen = false
+                    visitToEdit = null
+                },
+                onVisitUpdated = { updatedVisit ->
+                    showEditVisitScreen = false
+                    visitToEdit = null
+                    // Refresh visits list
+                    coroutineScope.launch {
+                        refreshVisits()
+                    }
+                    println("Visit updated: $updatedVisit")
                 }
             )
         }

@@ -108,9 +108,10 @@ src/
 2. **Visit Management** - **✅ CORE FEATURES IMPLEMENTED**
    - ✅ Create new visit records with comprehensive forms
    - ✅ Visit details screen with patient information display
+   - ✅ Delete visit functionality with confirmation dialog
    - ✅ Database integration with Realm DB and reactive data flow
    - ✅ Domain layer with use cases and repository pattern
-   - 📋 Edit visit functionality (planned)
+   - 📋 Edit visit functionality (next priority)
    - 📋 Multi-step form for comprehensive data entry (planned)
    - 📋 Template-based visit types (planned)
    - 📋 Treatment planning and follow-up scheduling (planned)
@@ -169,11 +170,12 @@ src/
 1. **Phase 1**: Core patient and visit management (Desktop) - **✅ COMPLETED**
    - ✅ Patient management fully implemented
    - ✅ Visit management core features implemented
-2. **Phase 2**: Advanced visit features and system improvements - **📋 NEXT**
-   - Edit visit functionality
-   - Enhanced data validation
-   - Error handling improvements
-   - Search and filtering
+2. **Phase 2**: Advanced visit features and system improvements - **🔄 IN PROGRESS**
+   - ✅ Delete visit functionality with confirmation dialog
+   - 📋 Edit visit functionality (next priority)
+   - 📋 Enhanced data validation
+   - 📋 Error handling improvements
+   - 📋 Search and filtering
 3. **Phase 3**: Extended visit information (apparatus, treatments, evaluations) - **📋 PLANNED**
    - Comprehensive clinical data models
    - Multi-step visit forms
@@ -185,7 +187,7 @@ src/
 
 ## Current Status (January 2025)
 - **Patient Management**: ✅ **COMPLETE** - Full CRUD operations, parent information, clinical history
-- **Visit Management**: ✅ **CORE FEATURES COMPLETE** - Create visits, view details, database integration, domain layer
+- **Visit Management**: ✅ **CORE FEATURES COMPLETE** - Create visits, view details, delete visits, database integration, domain layer
 - **Database Integration**: ✅ **COMPLETE** - Realm DB with reactive data flow
 - **UI/UX**: ✅ **COMPLETE** - Material 3 design with Italian localization
 - **Data Validation**: 🔄 **PARTIAL** - Basic validation implemented, needs enhancement
