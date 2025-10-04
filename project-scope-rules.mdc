@@ -105,11 +105,15 @@ src/
    - ✅ Parent information management for minors
    - ✅ Anthropometric measurements and privacy consents
 
-2. **Visit Management** - **✅ DATA MODELS COMPLETED** - **🔄 REPOSITORY & UI IN PROGRESS**
-   - Create new visit records
-   - Multi-step form for comprehensive data entry
-   - Template-based visit types
-   - Treatment planning and follow-up scheduling
+2. **Visit Management** - **✅ CORE FEATURES IMPLEMENTED**
+   - ✅ Create new visit records with comprehensive forms
+   - ✅ Visit details screen with patient information display
+   - ✅ Database integration with Realm DB and reactive data flow
+   - ✅ Domain layer with use cases and repository pattern
+   - 📋 Edit visit functionality (planned)
+   - 📋 Multi-step form for comprehensive data entry (planned)
+   - 📋 Template-based visit types (planned)
+   - 📋 Treatment planning and follow-up scheduling (planned)
 
 3. **Data Visualization** - **📋 PLANNED**
    - Patient timeline view
@@ -162,18 +166,28 @@ src/
 - **Performance Tests**: Database query performance and UI responsiveness
 
 ## Development Priorities
-1. **Phase 1**: Core patient and visit management (Desktop) - **🔄 IN PROGRESS**
+1. **Phase 1**: Core patient and visit management (Desktop) - **✅ COMPLETED**
    - ✅ Patient management fully implemented
-   - 🔄 Visit management in progress
-2. **Phase 2**: Advanced search and reporting features - **📋 PLANNED**
-3. **Phase 3**: Mobile platform support - **📋 PLANNED**
-4. **Phase 4**: Advanced analytics and practice management tools - **📋 PLANNED**
+   - ✅ Visit management core features implemented
+2. **Phase 2**: Advanced visit features and system improvements - **📋 NEXT**
+   - Edit visit functionality
+   - Enhanced data validation
+   - Error handling improvements
+   - Search and filtering
+3. **Phase 3**: Extended visit information (apparatus, treatments, evaluations) - **📋 PLANNED**
+   - Comprehensive clinical data models
+   - Multi-step visit forms
+   - Treatment documentation
+4. **Phase 4**: Advanced features and mobile platform support - **📋 PLANNED**
+   - Advanced analytics
+   - Mobile platform support
+   - Data migration and backup
 
 ## Current Status (January 2025)
 - **Patient Management**: ✅ **COMPLETE** - Full CRUD operations, parent information, clinical history
+- **Visit Management**: ✅ **CORE FEATURES COMPLETE** - Create visits, view details, database integration, domain layer
 - **Database Integration**: ✅ **COMPLETE** - Realm DB with reactive data flow
 - **UI/UX**: ✅ **COMPLETE** - Material 3 design with Italian localization
-- **Visit Management**: ✅ **DATA MODELS COMPLETED** - Realm models with validation implemented, repository and UI pending
 - **Data Validation**: 🔄 **PARTIAL** - Basic validation implemented, needs enhancement
 
 When generating code, prioritize:

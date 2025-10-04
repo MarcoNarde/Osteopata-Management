@@ -45,6 +45,10 @@ fun OsteopathManagementApp() {
     var selectedVisit by remember { mutableStateOf<Visit?>(null) }
     var showAddVisitScreen by remember { mutableStateOf(false) }
     
+    // Delete confirmation state
+    var showDeleteVisitDialog by remember { mutableStateOf(false) }
+    var visitToDelete by remember { mutableStateOf<Visit?>(null) }
+    
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
 
@@ -118,6 +122,38 @@ fun OsteopathManagementApp() {
                 }
             } catch (e: Exception) {
                 println("OsteopathApp: ERROR deleting patient: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    // Function to delete a visit
+    val deleteVisit: (Visit) -> Unit = { visit ->
+        coroutineScope.launch {
+            try {
+                println("OsteopathApp: Starting deletion for visit ID: ${visit.idVisita}")
+                
+                if (isDatabaseSupported()) {
+                    val repository = DatabaseInitializer.getVisitRepository()
+                    if (repository != null) {
+                        // First check if visit exists before deletion
+                        val existingVisit = repository.getVisitById(visit.idVisita)
+                        if (existingVisit != null) {
+                            println("OsteopathApp: Visit found, proceeding with deletion")
+                            repository.deleteVisit(visit.idVisita)
+                            refreshVisits() // Refresh the list after deletion
+                            println("OsteopathApp: Visit ${visit.idVisita} deleted successfully")
+                        } else {
+                            println("OsteopathApp: ERROR - Visit not found for deletion")
+                        }
+                    } else {
+                        println("OsteopathApp: ERROR - Visit repository is null")
+                    }
+                } else {
+                    println("OsteopathApp: ERROR - Database not supported for visit deletion")
+                }
+            } catch (e: Exception) {
+                println("OsteopathApp: ERROR deleting visit: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -373,6 +409,10 @@ fun OsteopathManagementApp() {
                                 onVisitClick = { visit ->
                                     selectedVisit = visit
                                     showVisitDetails = true
+                                },
+                                onDeleteVisit = { visit ->
+                                    visitToDelete = visit
+                                    showDeleteVisitDialog = true
                                 }
                             )
                         }
@@ -380,5 +420,44 @@ fun OsteopathManagementApp() {
                 }
             }
         }
+    }
+    
+    // Delete visit confirmation dialog
+    if (showDeleteVisitDialog && visitToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteVisitDialog = false
+                visitToDelete = null
+            },
+            title = {
+                Text("Conferma eliminazione")
+            },
+            text = {
+                Text("Sei sicuro di voler eliminare la visita del ${visitToDelete?.dataVisita} per il paziente ${visitToDelete?.idPaziente}?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        visitToDelete?.let { visit ->
+                            deleteVisit(visit)
+                        }
+                        showDeleteVisitDialog = false
+                        visitToDelete = null
+                    }
+                ) {
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteVisitDialog = false
+                        visitToDelete = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
     }
 }

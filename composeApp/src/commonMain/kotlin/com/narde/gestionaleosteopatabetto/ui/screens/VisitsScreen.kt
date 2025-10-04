@@ -25,7 +25,8 @@ import com.narde.gestionaleosteopatabetto.ui.components.VisitCard
 @Composable
 fun VisitsScreen(
     visits: List<Visit>,
-    onVisitClick: (Visit) -> Unit = {}
+    onVisitClick: (Visit) -> Unit = {},
+    onDeleteVisit: (Visit) -> Unit = {}
 ) {
     // Calculate visit statistics for better overview
     val totalVisits = visits.size
@@ -146,7 +147,8 @@ fun VisitsScreen(
                     items(visits) { visit ->
                         VisitCard(
                             visit = visit,
-                            onClick = { onVisitClick(visit) }
+                            onClick = { onVisitClick(visit) },
+                            onDeleteClick = { onDeleteVisit(visit) }
                         )
                     }
                 }

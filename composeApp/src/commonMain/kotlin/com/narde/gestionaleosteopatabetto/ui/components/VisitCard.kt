@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,7 +21,8 @@ import com.narde.gestionaleosteopatabetto.data.model.Visit
 @Composable
 fun VisitCard(
     visit: Visit,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -120,6 +122,19 @@ fun VisitCard(
                         fontWeight = FontWeight.Normal
                     )
                 }
+            }
+            
+            // Delete button
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Elimina visita",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
