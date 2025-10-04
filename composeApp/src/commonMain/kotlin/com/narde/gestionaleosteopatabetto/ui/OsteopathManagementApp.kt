@@ -68,6 +68,29 @@ fun OsteopathManagementApp() {
         }
     }
     
+    // Function to refresh visits list
+    val refreshVisits: suspend () -> Unit = {
+        try {
+            println("OsteopathManagementApp: Starting visits refresh")
+            if (isDatabaseSupported()) {
+                val repository = DatabaseInitializer.getVisitRepository()
+                if (repository != null) {
+                    val dbVisits = repository.getAllVisits()
+                    println("OsteopathManagementApp: Loaded ${dbVisits.size} visits from database")
+                    visits = dbVisits.map { databaseUtils.toUIVisit(it) }
+                    println("OsteopathManagementApp: Converted to ${visits.size} UI visits")
+                } else {
+                    println("OsteopathManagementApp: Visit repository is null")
+                }
+            } else {
+                println("OsteopathManagementApp: Database not supported")
+            }
+        } catch (e: Exception) {
+            println("Error refreshing visits: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+    
     // Function to delete a patient
     val deletePatient: (String, String) -> Unit = { patientId, patientName ->
         coroutineScope.launch {
@@ -122,8 +145,18 @@ fun OsteopathManagementApp() {
                 patients = SampleData.patients
             }
 
-            // Load visits (using sample data for now)
-            visits = SampleData.visits
+            // Load visits from database
+            if (isDatabaseSupported()) {
+                val visitRepository = DatabaseInitializer.getVisitRepository()
+                if (visitRepository != null) {
+                    val dbVisits = visitRepository.getAllVisits()
+                    visits = dbVisits.map { databaseUtils.toUIVisit(it) }
+                } else {
+                    visits = SampleData.visits
+                }
+            } else {
+                visits = SampleData.visits
+            }
 
         } catch (e: Exception) {
             // If there's any error, fall back to sample data
@@ -181,8 +214,13 @@ fun OsteopathManagementApp() {
                 },
                 onVisitSaved = { visit ->
                     showAddVisitScreen = false
-                    // Refresh visits list - TODO: Implement visits refresh
-                    println("Visit saved: $visit")
+                    // Navigate to visits tab to show the updated list
+                    selectedTabIndex = 1
+                    // Refresh visits list
+                    coroutineScope.launch {
+                        refreshVisits()
+                    }
+                    println("Visit saved: $visit - Navigated to visits tab")
                 }
             )
         }

@@ -2,8 +2,11 @@ package com.narde.gestionaleosteopatabetto.ui.factories
 
 import androidx.compose.runtime.Composable
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddPatientViewModel
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddVisitViewModel
 import com.narde.gestionaleosteopatabetto.domain.usecases.SavePatientUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.UpdatePatientUseCase
+import com.narde.gestionaleosteopatabetto.domain.usecases.GetVisitsByPatientUseCaseImpl
+import com.narde.gestionaleosteopatabetto.domain.usecases.SaveVisitUseCaseImpl
 
 /**
  * Factory for creating ViewModels with proper dependencies
@@ -41,6 +44,16 @@ object ViewModelFactory {
         
         return mockUseCase
     }
+    
+    /**
+     * Create AddVisitViewModel with proper dependencies
+     */
+    fun createAddVisitViewModel(): AddVisitViewModel {
+        val savePatientUseCase = SavePatientUseCaseImpl()
+        val getVisitsByPatientUseCase = GetVisitsByPatientUseCaseImpl()
+        val saveVisitUseCase = SaveVisitUseCaseImpl()
+        return AddVisitViewModel(savePatientUseCase, getVisitsByPatientUseCase, saveVisitUseCase)
+    }
 }
 
 /**
@@ -57,4 +70,12 @@ fun rememberAddPatientViewModel(): AddPatientViewModel {
 @Composable
 fun rememberUpdatePatientUseCase(): UpdatePatientUseCase {
     return androidx.compose.runtime.remember { ViewModelFactory.createUpdatePatientUseCase() }
+}
+
+/**
+ * Composable function to get AddVisitViewModel with proper dependencies
+ */
+@Composable
+fun rememberAddVisitViewModel(): AddVisitViewModel {
+    return androidx.compose.runtime.remember { ViewModelFactory.createAddVisitViewModel() }
 }

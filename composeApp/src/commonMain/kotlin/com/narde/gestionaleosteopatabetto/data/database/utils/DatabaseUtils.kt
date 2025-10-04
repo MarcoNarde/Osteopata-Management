@@ -2,6 +2,7 @@ package com.narde.gestionaleosteopatabetto.data.database.utils
 
 import com.narde.gestionaleosteopatabetto.data.database.models.*
 import com.narde.gestionaleosteopatabetto.data.model.Patient as UIPatient
+import com.narde.gestionaleosteopatabetto.data.model.Visit as UIVisit
 import io.realm.kotlin.ext.realmListOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -138,6 +139,19 @@ class DatabaseUtils : DatabaseUtilsInterface {
             age = age,
             bmi = databasePatient.datiPersonali?.bmi,
             parentInfo = parentInfo
+        )
+    }
+    
+    /**
+     * Convert database visit to UI visit
+     */
+    override fun toUIVisit(databaseVisit: Visita): UIVisit {
+        return UIVisit(
+            idVisita = databaseVisit.idVisita,
+            idPaziente = databaseVisit.idPaziente,
+            dataVisita = databaseVisit.dataVisita,
+            osteopata = databaseVisit.osteopata,
+            noteGenerali = databaseVisit.noteGenerali
         )
     }
     

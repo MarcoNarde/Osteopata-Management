@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Patient
 import com.narde.gestionaleosteopatabetto.data.model.Visit
 import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
+import com.narde.gestionaleosteopatabetto.domain.usecases.SaveVisitUseCaseImpl
+import com.narde.gestionaleosteopatabetto.domain.models.Visit as DomainVisit
+import com.narde.gestionaleosteopatabetto.utils.DateUtils
+import kotlinx.coroutines.launch
 
 /**
  * Screen for adding new visits to the osteopath management system
@@ -32,11 +36,21 @@ fun AddVisitScreen(
     onVisitSaved: (Visit) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Coroutine scope for async operations
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Save visit use case
+    val saveVisitUseCase = remember { SaveVisitUseCaseImpl() }
+    
     // Form state
     var selectedPatient by remember { mutableStateOf<Patient?>(null) }
     var visitDate by remember { mutableStateOf("") }
     val osteopath = "Roberto Caeran" // Fixed osteopath name - not editable
     var generalNotes by remember { mutableStateOf("") }
+    
+    // Save state
+    var isSaving by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
     
     // Patient dropdown state
     var patientDropdownExpanded by remember { mutableStateOf(false) }
@@ -84,18 +98,61 @@ fun AddVisitScreen(
             actions = {
                 Button(
                     onClick = {
-                        // TODO: Implement save logic
-                        onVisitSaved(
-                            Visit(
-                                idVisita = "VIS_" + System.currentTimeMillis(),
-                                idPaziente = selectedPatient?.id ?: "",
-                                dataVisita = visitDate,
-                                osteopata = osteopath,
-                                noteGenerali = generalNotes
-                            )
-                        )
+                        // Save visit to database using SaveVisitUseCase
+                        coroutineScope.launch {
+                            try {
+                                isSaving = true
+
+                                println("AddVisitScreen: Starting visit save process")
+                                
+                                // Create domain visit model
+                                val domainVisit = DomainVisit(
+                                    idVisita = "VIS_" + System.currentTimeMillis(),
+                                    idPaziente = selectedPatient?.id ?: "",
+                                    dataVisita = DateUtils.parseItalianDate(visitDate) ?: throw IllegalArgumentException("Invalid date format: $visitDate"),
+                                    osteopata = osteopath,
+                                    noteGenerali = generalNotes,
+                                    datiVisitaCorrente = null,
+                                    motivoConsulto = null
+                                )
+                                
+                                println("AddVisitScreen: Created domain visit - ID: ${domainVisit.idVisita}")
+                                
+                                // Save using use case
+                                saveVisitUseCase(domainVisit).collect { result ->
+                                    when {
+                                        result.isSuccess -> {
+                                            val savedVisit = result.getOrNull()
+                                            println("AddVisitScreen: Visit saved successfully - ID: ${savedVisit?.idVisita}")
+                                            
+                                            // Create UI visit for callback
+                                            val uiVisit = Visit(
+                                                idVisita = savedVisit?.idVisita ?: domainVisit.idVisita,
+                                                idPaziente = savedVisit?.idPaziente ?: domainVisit.idPaziente,
+                                                dataVisita = savedVisit?.dataVisitaString ?: visitDate,
+                                                osteopata = savedVisit?.osteopata ?: domainVisit.osteopata,
+                                                noteGenerali = savedVisit?.noteGenerali ?: domainVisit.noteGenerali
+                                            )
+                                            
+                                            onVisitSaved(uiVisit)
+                                            isSaving = false
+                                        }
+                                        result.isFailure -> {
+                                            val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                                            println("AddVisitScreen: Save failed - $error")
+                                            isSaving = false
+                                        }
+                                    }
+                                }
+                                
+                            } catch (e: Exception) {
+                                println("AddVisitScreen: Exception in save process - ${e.message}")
+                                e.printStackTrace()
+                                isSaving = false
+                            }
+                        }
                     },
-                    enabled = selectedPatient != null && visitDate.isNotBlank()
+                    enabled = selectedPatient != null && visitDate.isNotBlank() && !isSaving
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,

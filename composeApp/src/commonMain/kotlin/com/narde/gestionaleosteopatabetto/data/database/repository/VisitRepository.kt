@@ -83,9 +83,12 @@ class VisitRepository : VisitRepositoryInterface {
      * If visit is new, it will be created
      */
     override suspend fun saveVisit(visit: Visita) {
+        println("VisitRepository: Starting save for visit ID: ${visit.idVisita}")
         realm.write {
             copyToRealm(visit, updatePolicy = io.realm.kotlin.UpdatePolicy.ALL)
+            println("VisitRepository: Visit saved to Realm database - ID: ${visit.idVisita}")
         }
+        println("VisitRepository: Save operation completed")
     }
     
     /**

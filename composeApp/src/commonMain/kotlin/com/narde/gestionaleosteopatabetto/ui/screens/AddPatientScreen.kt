@@ -189,6 +189,9 @@ fun AddPatientScreen(
                 is SideEffect.ShowMessage -> {
                     // Handle message display if needed
                 }
+                else -> {
+                    // For any unexpected side effects
+                }
             }
         }
     }

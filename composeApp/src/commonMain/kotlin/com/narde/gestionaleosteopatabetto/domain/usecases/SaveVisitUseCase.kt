@@ -27,17 +27,25 @@ class SaveVisitUseCaseImpl : SaveVisitUseCase {
      */
     override suspend operator fun invoke(visit: Visit): Flow<Result<Visit>> = flow {
         try {
+            println("SaveVisitUseCase: Starting save for visit: ${visit.idVisita}")
+            
             // Business logic: Validate visit data
             val validationResult = validateVisit(visit)
             if (!validationResult.isValid) {
+                println("SaveVisitUseCase: Validation failed: ${validationResult.errorMessage}")
                 emit(Result.failure(Exception(validationResult.errorMessage)))
                 return@flow
             }
             
+            println("SaveVisitUseCase: Validation passed")
+            
             // Business logic: Generate visit ID if not provided
             val visitToSave = if (visit.idVisita.isEmpty()) {
-                visit.copy(idVisita = generateVisitId(visit.idPaziente, visit.dataVisitaString))
+                val generatedId = generateVisitId(visit.idPaziente, visit.dataVisitaString)
+                println("SaveVisitUseCase: Generated visit ID: $generatedId")
+                visit.copy(idVisita = generatedId)
             } else {
+                println("SaveVisitUseCase: Using existing visit ID: ${visit.idVisita}")
                 visit
             }
             
@@ -45,22 +53,31 @@ class SaveVisitUseCaseImpl : SaveVisitUseCase {
             if (isDatabaseSupported()) {
                 val repository = DatabaseInitializer.getVisitRepository()
                 if (repository != null) {
+                    println("SaveVisitUseCase: Converting domain model to database model")
                     // Convert domain model to database model
                     val databaseVisit = visitToSave.toDatabaseModel()
+                    
+                    println("SaveVisitUseCase: Database model created - ID: ${databaseVisit.idVisita}, Patient: ${databaseVisit.idPaziente}, Date: ${databaseVisit.dataVisita}")
                     
                     // Save to database
                     repository.saveVisit(databaseVisit)
                     
+                    println("SaveVisitUseCase: Visit saved to database successfully")
+                    
                     // Return success with the saved visit
                     emit(Result.success(visitToSave))
                 } else {
+                    println("SaveVisitUseCase: Repository is null")
                     emit(Result.failure(Exception("Visit repository not available")))
                 }
             } else {
+                println("SaveVisitUseCase: Database not supported")
                 emit(Result.failure(Exception("Database not supported on this platform")))
             }
             
         } catch (e: Exception) {
+            println("SaveVisitUseCase: Exception occurred: ${e.message}")
+            e.printStackTrace()
             emit(Result.failure(e))
         }
     }
@@ -73,8 +90,9 @@ class SaveVisitUseCaseImpl : SaveVisitUseCase {
             visit.idPaziente.isBlank() -> ValidationResult.invalid("Patient ID is required")
             visit.dataVisitaString.isBlank() -> ValidationResult.invalid("Visit date is required")
             visit.osteopata.isBlank() -> ValidationResult.invalid("Osteopath name is required")
-            visit.motivoConsulto?.principale?.vas !in 0..10 -> ValidationResult.invalid("VAS score must be between 0 and 10")
-            visit.motivoConsulto?.secondario?.vas !in 0..10 -> ValidationResult.invalid("Secondary VAS score must be between 0 and 10")
+            // Only validate VAS scores when consultation reasons exist
+            visit.motivoConsulto?.principale != null && visit.motivoConsulto.principale.vas !in 0..10 -> ValidationResult.invalid("VAS score must be between 0 and 10")
+            visit.motivoConsulto?.secondario != null && visit.motivoConsulto.secondario.vas !in 0..10 -> ValidationResult.invalid("Secondary VAS score must be between 0 and 10")
             else -> ValidationResult.valid()
         }
     }
