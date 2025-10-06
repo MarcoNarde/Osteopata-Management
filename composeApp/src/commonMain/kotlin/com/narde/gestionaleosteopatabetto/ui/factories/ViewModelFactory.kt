@@ -3,10 +3,14 @@ package com.narde.gestionaleosteopatabetto.ui.factories
 import androidx.compose.runtime.Composable
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddVisitViewModel
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditVisitViewModel
 import com.narde.gestionaleosteopatabetto.domain.usecases.SavePatientUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.UpdatePatientUseCase
+import com.narde.gestionaleosteopatabetto.domain.usecases.UpdateVisitUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.GetVisitsByPatientUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.SaveVisitUseCaseImpl
+import com.narde.gestionaleosteopatabetto.domain.usecases.GetVisitUseCaseImpl
+import com.narde.gestionaleosteopatabetto.data.model.Patient
 
 /**
  * Factory for creating ViewModels with proper dependencies
@@ -54,6 +58,15 @@ object ViewModelFactory {
         val saveVisitUseCase = SaveVisitUseCaseImpl()
         return AddVisitViewModel(savePatientUseCase, getVisitsByPatientUseCase, saveVisitUseCase)
     }
+    
+    /**
+     * Create EditVisitViewModel with proper dependencies
+     */
+    fun createEditVisitViewModel(patients: List<Patient>?): EditVisitViewModel {
+        val updateVisitUseCase = UpdateVisitUseCaseImpl()
+        val getVisitUseCase = GetVisitUseCaseImpl()
+        return EditVisitViewModel(patients, updateVisitUseCase, getVisitUseCase)
+    }
 }
 
 /**
@@ -78,4 +91,14 @@ fun rememberUpdatePatientUseCase(): UpdatePatientUseCase {
 @Composable
 fun rememberAddVisitViewModel(): AddVisitViewModel {
     return androidx.compose.runtime.remember { ViewModelFactory.createAddVisitViewModel() }
+}
+
+/**
+ * Composable function to get EditVisitViewModel with proper dependencies
+ */
+@Composable
+fun rememberEditVisitViewModel(patients: List<Patient>?): EditVisitViewModel {
+    return androidx.compose.runtime.remember(patients) { 
+        ViewModelFactory.createEditVisitViewModel(patients) 
+    }
 }

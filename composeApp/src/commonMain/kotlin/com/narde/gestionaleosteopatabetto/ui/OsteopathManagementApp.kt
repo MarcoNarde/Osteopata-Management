@@ -280,9 +280,12 @@ fun OsteopathManagementApp() {
             )
         }
         showEditVisitScreen && visitToEdit != null -> {
-            println("OsteopathApp: Navigating to EditVisitScreen - visitToEdit: $visitToEdit")
+            val currentVisitToEdit = visitToEdit // Capture the value to avoid smart cast issues
+            println("OsteopathApp: Navigating to EditVisitScreen - visitToEdit: $currentVisitToEdit")
+            println("OsteopathApp: Patients list size: ${patients.size}")
+            println("OsteopathApp: Patients list: $patients")
             EditVisitScreen(
-                visit = visitToEdit!!,
+                visitId = currentVisitToEdit?.idVisita ?: "", // Pass visit ID instead of visit object
                 patients = patients,
                 onBackClick = {
                     showEditVisitScreen = false

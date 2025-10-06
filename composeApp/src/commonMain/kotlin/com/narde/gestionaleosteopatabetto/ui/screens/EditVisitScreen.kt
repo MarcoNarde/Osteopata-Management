@@ -16,75 +16,60 @@ import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Patient
 import com.narde.gestionaleosteopatabetto.data.model.Visit
 import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
-import com.narde.gestionaleosteopatabetto.domain.usecases.UpdateVisitUseCaseImpl
-import com.narde.gestionaleosteopatabetto.domain.models.Visit as DomainVisit
-import com.narde.gestionaleosteopatabetto.utils.DateUtils
-import kotlinx.coroutines.launch
+import com.narde.gestionaleosteopatabetto.ui.factories.rememberEditVisitViewModel
+import com.narde.gestionaleosteopatabetto.ui.mvi.EditVisitEvent
+import com.narde.gestionaleosteopatabetto.ui.mvi.EditVisitSideEffect
 
 /**
  * Screen for editing existing visits in the osteopath management system
- * Pre-populated form with existing visit data for modification
+ * Uses MVI pattern with EditVisitViewModel for state management
+ * Loads visit by ID instead of passing visit object
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditVisitScreen(
-    visit: Visit,
-    patients: List<Patient>,
+    visitId: String,
+    patients: List<Patient>?,
     onBackClick: () -> Unit,
     onVisitUpdated: (Visit) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Coroutine scope for async operations
-    val coroutineScope = rememberCoroutineScope()
+    // ViewModel with MVI pattern - no null handling needed
+    val viewModel = rememberEditVisitViewModel(patients)
+    val state by viewModel.state.collectAsState()
+    val sideEffects = viewModel.sideEffects
     
-    // Update visit use case
-    val updateVisitUseCase = remember { UpdateVisitUseCaseImpl() }
-    
-    // Form state - pre-populated with existing visit data
-    var selectedPatient by remember { mutableStateOf<Patient?>(null) }
-    var visitDate by remember { mutableStateOf(visit.dataVisita) }
-    val osteopath = visit.osteopata // Use existing osteopath name
-    var generalNotes by remember { mutableStateOf(visit.noteGenerali) }
-    
-    // Save state
-    var isSaving by remember { mutableStateOf(false) }
-    
-    // Patient dropdown state
-    var patientDropdownExpanded by remember { mutableStateOf(false) }
-    var patientSearchText by remember { mutableStateOf("") }
-    
-    // Current visit data state
-    var weight by remember { mutableStateOf("") }
-    var bmi by remember { mutableStateOf("") }
-    var bloodPressure by remember { mutableStateOf("") }
-    var cranialIndices by remember { mutableStateOf("") }
-    
-    // Consultation reason state
-    var mainReason by remember { mutableStateOf("") }
-    var mainReasonOnset by remember { mutableStateOf("") }
-    var mainReasonPain by remember { mutableStateOf("") }
-    var mainReasonVas by remember { mutableStateOf("") }
-    var mainReasonFactors by remember { mutableStateOf("") }
-    
-    var secondaryReason by remember { mutableStateOf("") }
-    var secondaryReasonDuration by remember { mutableStateOf("") }
-    var secondaryReasonVas by remember { mutableStateOf("") }
-    
-    // Find and set the selected patient from the visit
-    LaunchedEffect(visit.idPaziente, patients) {
-        selectedPatient = patients.find { it.id == visit.idPaziente }
-    }
-    
-    // Filter patients based on search text
-    val filteredPatients = remember(patientSearchText, patients) {
-        if (patientSearchText.isEmpty()) {
-            patients
-        } else {
-            patients.filter { patient ->
-                patient.name.contains(patientSearchText, ignoreCase = true) ||
-                patient.id.contains(patientSearchText, ignoreCase = true)
+    // Handle side effects
+    LaunchedEffect(sideEffects) {
+        sideEffects.collect { sideEffect ->
+            when (sideEffect) {
+                is EditVisitSideEffect.VisitUpdated -> {
+                    onVisitUpdated(sideEffect.visit)
+                }
+                is EditVisitSideEffect.NavigateBack -> {
+                    onBackClick()
+                }
+                is EditVisitSideEffect.ShowError -> {
+                    // TODO: Show error message to user
+                    println("EditVisitScreen: Error - ${sideEffect.message}")
+                }
+                is EditVisitSideEffect.SavingStarted -> {
+                    println("EditVisitScreen: Saving started")
+                }
+                is EditVisitSideEffect.SavingCompleted -> {
+                    println("EditVisitScreen: Saving completed")
+                }
+                else -> {
+                    // Handle any other SideEffect types if needed
+                    println("EditVisitScreen: Unhandled side effect - $sideEffect")
+                }
             }
         }
+    }
+    
+    // Load visit data when screen is first displayed
+    LaunchedEffect(visitId) {
+        viewModel.sendIntent(EditVisitEvent.LoadVisitById(visitId))
     }
     
     Column(
@@ -110,61 +95,9 @@ fun EditVisitScreen(
             actions = {
                 Button(
                     onClick = {
-                        // Update visit to database using UpdateVisitUseCase
-                        coroutineScope.launch {
-                            try {
-                                isSaving = true
-                                
-                                println("EditVisitScreen: Starting visit update process")
-                                
-                                // Create domain visit model with updated data
-                                val domainVisit = DomainVisit(
-                                    idVisita = visit.idVisita, // Keep existing ID
-                                    idPaziente = selectedPatient?.id ?: visit.idPaziente,
-                                    dataVisita = DateUtils.parseItalianDate(visitDate) ?: throw IllegalArgumentException("Invalid date format: $visitDate"),
-                                    osteopata = osteopath,
-                                    noteGenerali = generalNotes,
-                                    datiVisitaCorrente = null,
-                                    motivoConsulto = null
-                                )
-                                
-                                println("EditVisitScreen: Created domain visit - ID: ${domainVisit.idVisita}")
-                                
-                                // Update using use case
-                                updateVisitUseCase(domainVisit).collect { result ->
-                                    when {
-                                        result.isSuccess -> {
-                                            val updatedVisit = result.getOrNull()
-                                            println("EditVisitScreen: Visit updated successfully - ID: ${updatedVisit?.idVisita}")
-                                            
-                                            // Create UI visit for callback
-                                            val uiVisit = Visit(
-                                                idVisita = updatedVisit?.idVisita ?: domainVisit.idVisita,
-                                                idPaziente = updatedVisit?.idPaziente ?: domainVisit.idPaziente,
-                                                dataVisita = updatedVisit?.dataVisitaString ?: visitDate,
-                                                osteopata = updatedVisit?.osteopata ?: domainVisit.osteopata,
-                                                noteGenerali = updatedVisit?.noteGenerali ?: domainVisit.noteGenerali
-                                            )
-                                            
-                                            onVisitUpdated(uiVisit)
-                                            isSaving = false
-                                        }
-                                        result.isFailure -> {
-                                            val error = result.exceptionOrNull()?.message ?: "Unknown error"
-                                            println("EditVisitScreen: Update failed - $error")
-                                            isSaving = false
-                                        }
-                                    }
-                                }
-                                
-                            } catch (e: Exception) {
-                                println("EditVisitScreen: Exception in update process - ${e.message}")
-                                e.printStackTrace()
-                                isSaving = false
-                            }
-                        }
+                        viewModel.sendIntent(EditVisitEvent.SaveVisit)
                     },
-                    enabled = selectedPatient != null && visitDate.isNotBlank() && !isSaving
+                    enabled = state.isFormValid && !state.isSaving
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -172,7 +105,7 @@ fun EditVisitScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Salva Modifiche")
+                    Text(if (state.isSaving) "Salvando..." else "Salva Modifiche")
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -209,17 +142,19 @@ fun EditVisitScreen(
                     
                     // Patient Selection Dropdown
                     ExposedDropdownMenuBox(
-                        expanded = patientDropdownExpanded,
-                        onExpandedChange = { patientDropdownExpanded = !patientDropdownExpanded }
+                        expanded = state.patientDropdownExpanded,
+                        onExpandedChange = { expanded ->
+                            viewModel.sendIntent(EditVisitEvent.TogglePatientDropdown(expanded))
+                        }
                     ) {
                         OutlinedTextField(
-                            value = selectedPatient?.let { "${it.name} (${it.id})" } ?: "",
+                            value = state.selectedPatient?.let { "${it.name} (${it.id})" } ?: "",
                             onValueChange = { },
                             readOnly = true,
                             label = { Text("Paziente Selezionato") },
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(
-                                    expanded = patientDropdownExpanded
+                                    expanded = state.patientDropdownExpanded
                                 )
                             },
                             modifier = Modifier
@@ -229,13 +164,17 @@ fun EditVisitScreen(
                         )
                         
                         ExposedDropdownMenu(
-                            expanded = patientDropdownExpanded,
-                            onDismissRequest = { patientDropdownExpanded = false }
+                            expanded = state.patientDropdownExpanded,
+                            onDismissRequest = { 
+                                viewModel.sendIntent(EditVisitEvent.TogglePatientDropdown(false))
+                            }
                         ) {
                             // Search field
                             OutlinedTextField(
-                                value = patientSearchText,
-                                onValueChange = { patientSearchText = it },
+                                value = state.patientSearchText,
+                                onValueChange = { searchText ->
+                                    viewModel.sendIntent(EditVisitEvent.UpdatePatientSearchText(searchText))
+                                },
                                 label = { Text("Cerca paziente...") },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -243,13 +182,13 @@ fun EditVisitScreen(
                                 singleLine = true
                             )
                             
-                            filteredPatients.forEach { patient ->
+                            state.filteredPatients.forEach { patient ->
                                 DropdownMenuItem(
                                     text = { Text("${patient.name} (${patient.id})") },
                                     onClick = {
-                                        selectedPatient = patient
-                                        patientDropdownExpanded = false
-                                        patientSearchText = ""
+                                        viewModel.sendIntent(EditVisitEvent.UpdatePatient(patient))
+                                        viewModel.sendIntent(EditVisitEvent.TogglePatientDropdown(false))
+                                        viewModel.sendIntent(EditVisitEvent.UpdatePatientSearchText(""))
                                     }
                                 )
                             }
@@ -258,15 +197,17 @@ fun EditVisitScreen(
                     
                     // Visit Date
                     ItalianDateInput(
-                        value = visitDate,
-                        onValueChange = { visitDate = it },
+                        value = state.visitDate,
+                        onValueChange = { date ->
+                            viewModel.sendIntent(EditVisitEvent.UpdateVisitDate(date))
+                        },
                         label = "Data Visita",
                         modifier = Modifier.fillMaxWidth()
                     )
                     
                     // Osteopath (Read-only)
                     OutlinedTextField(
-                        value = osteopath,
+                        value = state.osteopath,
                         onValueChange = { },
                         label = { Text("Osteopata") },
                         readOnly = true,
@@ -279,8 +220,10 @@ fun EditVisitScreen(
                     
                     // General Notes
                     OutlinedTextField(
-                        value = generalNotes,
-                        onValueChange = { generalNotes = it },
+                        value = state.generalNotes,
+                        onValueChange = { notes ->
+                            viewModel.sendIntent(EditVisitEvent.UpdateGeneralNotes(notes))
+                        },
                         label = { Text("Note Generali") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
@@ -312,16 +255,20 @@ fun EditVisitScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedTextField(
-                            value = weight,
-                            onValueChange = { weight = it },
+                            value = state.weight,
+                            onValueChange = { weight ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateWeight(weight))
+                            },
                             label = { Text("Peso (kg)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f)
                         )
                         
                         OutlinedTextField(
-                            value = bmi,
-                            onValueChange = { bmi = it },
+                            value = state.bmi,
+                            onValueChange = { bmi ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateBmi(bmi))
+                            },
                             label = { Text("BMI") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f)
@@ -333,15 +280,19 @@ fun EditVisitScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedTextField(
-                            value = bloodPressure,
-                            onValueChange = { bloodPressure = it },
+                            value = state.bloodPressure,
+                            onValueChange = { pressure ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateBloodPressure(pressure))
+                            },
                             label = { Text("Pressione") },
                             modifier = Modifier.weight(1f)
                         )
                         
                         OutlinedTextField(
-                            value = cranialIndices,
-                            onValueChange = { cranialIndices = it },
+                            value = state.cranialIndices,
+                            onValueChange = { indices ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateCranialIndices(indices))
+                            },
                             label = { Text("Indici Craniali") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f)
@@ -376,8 +327,10 @@ fun EditVisitScreen(
                     )
                     
                     OutlinedTextField(
-                        value = mainReason,
-                        onValueChange = { mainReason = it },
+                        value = state.mainReason,
+                        onValueChange = { reason ->
+                            viewModel.sendIntent(EditVisitEvent.UpdateMainReason(reason))
+                        },
                         label = { Text("Descrizione") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2,
@@ -389,15 +342,19 @@ fun EditVisitScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedTextField(
-                            value = mainReasonOnset,
-                            onValueChange = { mainReasonOnset = it },
+                            value = state.mainReasonOnset,
+                            onValueChange = { onset ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateMainReasonOnset(onset))
+                            },
                             label = { Text("Insorgenza") },
                             modifier = Modifier.weight(1f)
                         )
                         
                         OutlinedTextField(
-                            value = mainReasonPain,
-                            onValueChange = { mainReasonPain = it },
+                            value = state.mainReasonPain,
+                            onValueChange = { pain ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateMainReasonPain(pain))
+                            },
                             label = { Text("Dolore") },
                             modifier = Modifier.weight(1f)
                         )
@@ -408,16 +365,20 @@ fun EditVisitScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedTextField(
-                            value = mainReasonVas,
-                            onValueChange = { mainReasonVas = it },
+                            value = state.mainReasonVas,
+                            onValueChange = { vas ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateMainReasonVas(vas))
+                            },
                             label = { Text("VAS (0-10)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f)
                         )
                         
                         OutlinedTextField(
-                            value = mainReasonFactors,
-                            onValueChange = { mainReasonFactors = it },
+                            value = state.mainReasonFactors,
+                            onValueChange = { factors ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateMainReasonFactors(factors))
+                            },
                             label = { Text("Fattori") },
                             modifier = Modifier.weight(1f)
                         )
@@ -431,8 +392,10 @@ fun EditVisitScreen(
                     )
                     
                     OutlinedTextField(
-                        value = secondaryReason,
-                        onValueChange = { secondaryReason = it },
+                        value = state.secondaryReason,
+                        onValueChange = { reason ->
+                            viewModel.sendIntent(EditVisitEvent.UpdateSecondaryReason(reason))
+                        },
                         label = { Text("Descrizione") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2,
@@ -444,20 +407,42 @@ fun EditVisitScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedTextField(
-                            value = secondaryReasonDuration,
-                            onValueChange = { secondaryReasonDuration = it },
+                            value = state.secondaryReasonDuration,
+                            onValueChange = { duration ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateSecondaryReasonDuration(duration))
+                            },
                             label = { Text("Durata") },
                             modifier = Modifier.weight(1f)
                         )
                         
                         OutlinedTextField(
-                            value = secondaryReasonVas,
-                            onValueChange = { secondaryReasonVas = it },
+                            value = state.secondaryReasonVas,
+                            onValueChange = { vas ->
+                                viewModel.sendIntent(EditVisitEvent.UpdateSecondaryReasonVas(vas))
+                            },
                             label = { Text("VAS (0-10)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+            }
+            
+            // Error message display
+            state.errorMessage?.let { errorMessage ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
             

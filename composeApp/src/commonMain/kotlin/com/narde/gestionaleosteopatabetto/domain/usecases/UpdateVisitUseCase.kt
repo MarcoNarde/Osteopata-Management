@@ -26,15 +26,21 @@ class UpdateVisitUseCaseImpl : UpdateVisitUseCase {
      */
     override suspend operator fun invoke(visit: Visit): Flow<Result<Visit>> = flow {
         try {
+            println("UpdateVisitUseCase: Starting update process for visit ID: ${visit.idVisita}")
+            
             // Business logic: Validate visit data
             val validationResult = validateVisit(visit)
             if (!validationResult.isValid) {
+                println("UpdateVisitUseCase: Validation failed - ${validationResult.errorMessage}")
                 emit(Result.failure(Exception(validationResult.errorMessage)))
                 return@flow
             }
             
+            println("UpdateVisitUseCase: Validation passed")
+            
             // Business logic: Check if visit exists
             if (visit.idVisita.isBlank()) {
+                println("UpdateVisitUseCase: Visit ID is blank")
                 emit(Result.failure(Exception("Visit ID is required for update")))
                 return@flow
             }
@@ -43,35 +49,49 @@ class UpdateVisitUseCaseImpl : UpdateVisitUseCase {
             if (isDatabaseSupported()) {
                 val repository = DatabaseInitializer.getVisitRepository()
                 if (repository != null) {
+                    println("UpdateVisitUseCase: Repository available, checking if visit exists")
+                    
                     // Check if visit exists
                     val existingVisit = repository.getVisitById(visit.idVisita)
                     if (existingVisit == null) {
+                        println("UpdateVisitUseCase: Visit not found in database")
                         emit(Result.failure(Exception("Visit not found")))
                         return@flow
                     }
                     
+                    println("UpdateVisitUseCase: Visit found, converting to database model")
+                    
                     // Convert domain model to database model
                     val databaseVisit = visit.toDatabaseModel()
+                    
+                    println("UpdateVisitUseCase: Saving updated visit to database")
                     
                     // Update in database
                     repository.saveVisit(databaseVisit)
                     
+                    println("UpdateVisitUseCase: Visit updated successfully in database")
+                    
                     // Return success with the updated visit
                     emit(Result.success(visit))
                 } else {
+                    println("UpdateVisitUseCase: Repository is null")
                     emit(Result.failure(Exception("Visit repository not available")))
                 }
             } else {
+                println("UpdateVisitUseCase: Database not supported on this platform")
                 emit(Result.failure(Exception("Database not supported on this platform")))
             }
             
         } catch (e: Exception) {
+            println("UpdateVisitUseCase: Exception occurred - ${e.message}")
+            e.printStackTrace()
             emit(Result.failure(e))
         }
     }
     
     /**
      * Business logic: Validate visit data for updates
+     * Only validate required fields - allow optional fields to be null/empty
      */
     private fun validateVisit(visit: Visit): ValidationResult {
         return when {
@@ -79,8 +99,9 @@ class UpdateVisitUseCaseImpl : UpdateVisitUseCase {
             visit.idPaziente.isBlank() -> ValidationResult.invalid("Patient ID is required")
             visit.dataVisitaString.isBlank() -> ValidationResult.invalid("Visit date is required")
             visit.osteopata.isBlank() -> ValidationResult.invalid("Osteopath name is required")
-            visit.motivoConsulto?.principale?.vas !in 0..10 -> ValidationResult.invalid("VAS score must be between 0 and 10")
-            visit.motivoConsulto?.secondario?.vas !in 0..10 -> ValidationResult.invalid("Secondary VAS score must be between 0 and 10")
+            // Only validate VAS scores if the motivo consulto fields are not null
+            visit.motivoConsulto?.principale != null && visit.motivoConsulto?.principale?.vas !in 0..10 -> ValidationResult.invalid("Primary VAS score must be between 0 and 10")
+            visit.motivoConsulto?.secondario != null && visit.motivoConsulto?.secondario?.vas !in 0..10 -> ValidationResult.invalid("Secondary VAS score must be between 0 and 10")
             else -> ValidationResult.valid()
         }
     }
