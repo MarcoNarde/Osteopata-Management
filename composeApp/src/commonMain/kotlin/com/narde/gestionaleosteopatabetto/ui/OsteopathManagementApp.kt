@@ -16,6 +16,7 @@ import com.narde.gestionaleosteopatabetto.data.database.utils.createDatabaseUtil
 import com.narde.gestionaleosteopatabetto.data.sample.SampleData
 import com.narde.gestionaleosteopatabetto.ui.screens.AddPatientScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreen
+import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreenNew
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitDetailsScreen
@@ -42,6 +43,8 @@ fun OsteopathManagementApp() {
 
 
     var showPatientDetails by remember { mutableStateOf(false) }
+    var showPatientDetailsNew by remember { mutableStateOf(false) }
+    var selectedPatientId by remember { mutableStateOf<String?>(null) }
     var showVisitDetails by remember { mutableStateOf(false) }
     var selectedVisit by remember { mutableStateOf<Visit?>(null) }
     var showAddVisitScreen by remember { mutableStateOf(false) }
@@ -53,6 +56,9 @@ fun OsteopathManagementApp() {
     // Edit visit state
     var showEditVisitScreen by remember { mutableStateOf(false) }
     var visitToEdit by remember { mutableStateOf<Visit?>(null) }
+    
+    // Toggle for testing new vs old patient details screen
+    var useNewPatientDetailsScreen by remember { mutableStateOf(true) }
     
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
@@ -302,6 +308,19 @@ fun OsteopathManagementApp() {
                 }
             )
         }
+        showPatientDetailsNew && selectedPatientId != null -> {
+            PatientDetailsScreenNew(
+                patientId = selectedPatientId!!,
+                onBackClick = {
+                    showPatientDetailsNew = false
+                    selectedPatientId = null
+                },
+                onEditClick = {
+                    // TODO: Navigate to EditPatientScreen when it's created
+                    println("Edit button clicked for patient: $selectedPatientId")
+                }
+            )
+        }
         showPatientDetails && selectedDatabasePatient != null && selectedPatient != null -> {
             PatientDetailsScreen(
                 patient = selectedPatient!!,
@@ -373,6 +392,18 @@ fun OsteopathManagementApp() {
                     TopAppBar(
                         title = { Text(stringResource(Res.string.app_title)) },
                         actions = {
+                            // Toggle button for testing new vs old patient details screen
+                            if (selectedTabIndex == 0) {
+                                TextButton(
+                                    onClick = { useNewPatientDetailsScreen = !useNewPatientDetailsScreen }
+                                ) {
+                                    Text(
+                                        text = if (useNewPatientDetailsScreen) "New Screen" else "Old Screen",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
                             // Simple language indicator - use LanguageSwitcher component for full functionality
                             Text(
                                 text = "Multi-language App",
@@ -423,24 +454,31 @@ fun OsteopathManagementApp() {
                             0 -> PatientsScreen(
                                 patients = patients,
                                 onPatientClick = { patient ->
-                                    selectedPatient = patient
-                                    // Find the corresponding database patient
-                                    if (isDatabaseSupported()) {
-                                        val repository = DatabaseInitializer.getPatientRepository()
-                                        if (repository != null) {
-                                            try {
-                                                val dbPatient = repository.getPatientById(patient.id)
-                                                if (dbPatient != null) {
-                                                    selectedDatabasePatient = dbPatient
-                                                    showPatientDetails = true
-                                                }
-                                            } catch (e: Exception) {
-                                                println("Error loading patient details: ${e.message}")
-                                            }
-                                        }
+                                    if (useNewPatientDetailsScreen) {
+                                        // Use the new PatientDetailsScreenNew with ID-based navigation
+                                        selectedPatientId = patient.id
+                                        showPatientDetailsNew = true
                                     } else {
-                                        // If database not supported, show basic details with available info
-                                        showPatientDetails = true
+                                        // Use the old PatientDetailsScreen (for comparison)
+                                        selectedPatient = patient
+                                        // Find the corresponding database patient
+                                        if (isDatabaseSupported()) {
+                                            val repository = DatabaseInitializer.getPatientRepository()
+                                            if (repository != null) {
+                                                try {
+                                                    val dbPatient = repository.getPatientById(patient.id)
+                                                    if (dbPatient != null) {
+                                                        selectedDatabasePatient = dbPatient
+                                                        showPatientDetails = true
+                                                    }
+                                                } catch (e: Exception) {
+                                                    println("Error loading patient details: ${e.message}")
+                                                }
+                                            }
+                                        } else {
+                                            // If database not supported, show basic details with available info
+                                            showPatientDetails = true
+                                        }
                                     }
                                 },
                                 onDeletePatient = deletePatient

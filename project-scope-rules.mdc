@@ -194,28 +194,149 @@ src/
 - **Data Validation**: ✅ **COMPLETE** - Comprehensive validation with error handling
 - **MVI Architecture**: ✅ **COMPLETE** - Proper Model-View-Intent pattern implementation
 
-## Next Development Phase: Phase 3 - Extended Visit Information
+## Next Development Phase: Phase 3 - Patient Screen Architecture Refactoring
 
-### **🎯 Priority 1: Search and Filtering Enhancement**
+### **🚨 CRITICAL: Patient Screen Architecture Issues**
+
+**Current Problem**: The `PatientDetailsScreen` uses an inconsistent architecture compared to visits:
+- **Visits**: Separate screens (`VisitDetailsScreen` + `EditVisitScreen`) ✅ **GOOD**
+- **Patients**: Single complex screen with tabs and mixed ViewModels ❌ **PROBLEMATIC**
+
+**Issues with Current Implementation**:
+1. **Architectural Inconsistency**: Different patterns for patients vs visits
+2. **Complex State Management**: Multiple ViewModels in one screen
+3. **Mixed Responsibilities**: View and edit logic mixed together
+4. **Maintainability**: 1800+ lines in single file
+5. **Poor User Experience**: Tab-based editing is confusing
+6. **Testing Complexity**: Hard to test individual components
+
+### **🎯 Priority 1: Patient Screen Architecture Refactoring**
+
+#### **Phase 1: Create Separate Patient Screens (Like Visits)**
+
+**1.1 Create PatientDetailsScreen (View Only)**
+```kotlin
+PatientDetailsScreen(
+    patientId: String,
+    onBackClick: () -> Unit,
+    onEditClick: () -> Unit
+)
+```
+- Read-only display of all patient information
+- Organized sections (Personal Data, Clinical History, etc.)
+- Edit button that navigates to EditPatientScreen
+- Clean, focused responsibility
+
+**1.2 Create EditPatientScreen (Edit Only)**
+```kotlin
+EditPatientScreen(
+    patientId: String,
+    onBackClick: () -> Unit,
+    onPatientUpdated: (Patient) -> Unit
+)
+```
+- Comprehensive edit form for all patient data
+- Single ViewModel (`EditPatientViewModel`)
+- MVI pattern consistency
+- Form validation and error handling
+
+#### **Phase 2: Refactor ViewModels**
+
+**2.1 Consolidate EditPatientViewModel**
+- Merge `EditPatientViewModel` + `ClinicalHistoryViewModel` into one
+- Handle all patient data editing in single ViewModel
+- Use MVI pattern like `EditVisitViewModel`
+
+**2.2 Create PatientDetailsViewModel (View Only)**
+- Simple ViewModel for loading and displaying patient data
+- No editing logic, just data fetching and presentation
+
+#### **Phase 3: Update Navigation**
+
+**3.1 Update Navigation Flow**
+```kotlin
+// Current: PatientDetailsScreen (complex tabs)
+// New: 
+PatientsScreen -> PatientDetailsScreen (view) -> EditPatientScreen (edit)
+```
+
+**3.2 Update Navigation Calls**
+- Replace tab-based editing with screen navigation
+- Consistent with visit editing pattern
+
+#### **Phase 4: Component Extraction**
+
+**4.1 Extract Reusable Components**
+- `PatientInfoSection` (already exists)
+- `PatientInfoRow` (already exists)
+- `PatientEditForm` (extract from current screen)
+- `ClinicalHistoryEditForm` (already exists)
+
+**4.2 Create Shared Components**
+- Common patient display components
+- Reusable form components
+- Consistent styling
+
+#### **Phase 5: Testing & Validation**
+
+**5.1 Unit Tests**
+- Test each screen independently
+- Test ViewModels separately
+- Test navigation flow
+
+**5.2 Integration Tests**
+- Test complete patient editing workflow
+- Test data persistence
+- Test error handling
+
+### **Benefits of This Refactoring:**
+
+**Architectural Benefits:**
+1. **Consistency**: Same pattern as visits (Details + Edit screens)
+2. **Separation of Concerns**: View vs Edit responsibilities clearly separated
+3. **Maintainability**: Smaller, focused files
+4. **Testability**: Easier to test individual components
+
+**User Experience Benefits:**
+1. **Consistency**: Same editing pattern across the app
+2. **Clarity**: Clear distinction between viewing and editing
+3. **Performance**: Lighter screens, faster navigation
+4. **Accessibility**: Better screen reader support
+
+**Development Benefits:**
+1. **Code Reuse**: Shared components between screens
+2. **Debugging**: Easier to isolate issues
+3. **Feature Addition**: Easier to add new patient features
+4. **Team Development**: Multiple developers can work on different screens
+
+### **Implementation Priority:**
+
+1. **✅ COMPLETED**: Create `PatientDetailsScreenNew` (view only) - **DONE**
+2. **High Priority**: Create `EditPatientScreen` (edit only)
+3. **Medium Priority**: Consolidate ViewModels
+4. **Medium Priority**: Update navigation
+5. **Low Priority**: Extract components and optimize
+
+### **🎯 Priority 2: Search and Filtering Enhancement**
 - **Patient Search**: Advanced search across patient fields (name, ID, phone, email)
 - **Visit Search**: Search visits by date range, patient, osteopath, status
 - **Filtering**: Filter visits by date, patient, treatment type, status
 - **Quick Search**: Real-time search with debouncing for performance
 
-### **🎯 Priority 2: Enhanced Visit Data Models**
+### **🎯 Priority 3: Enhanced Visit Data Models**
 - **Apparatus Evaluation**: Comprehensive system evaluation models (cranial, respiratory, cardiovascular, etc.)
 - **Treatment Documentation**: Detailed treatment techniques, duration, recommendations
 - **Pain Assessment**: VAS scale, pain characteristics, triggers, relieving factors
 - **Follow-up Planning**: Next visit scheduling and treatment plans
 
-### **🎯 Priority 3: Multi-Step Visit Forms**
+### **🎯 Priority 4: Multi-Step Visit Forms**
 - **Step 1**: Basic visit information (patient, date, osteopath)
 - **Step 2**: Chief complaint and pain assessment
 - **Step 3**: Apparatus evaluation (13 body systems)
 - **Step 4**: Treatment documentation
 - **Step 5**: Final evaluation and follow-up planning
 
-### **🎯 Priority 4: Data Export and Backup**
+### **🎯 Priority 5: Data Export and Backup**
 - **JSON Export**: Export patient and visit data for backup
 - **Data Migration**: Support for schema updates and data migration
 - **Backup/Restore**: Complete data backup and restore functionality
