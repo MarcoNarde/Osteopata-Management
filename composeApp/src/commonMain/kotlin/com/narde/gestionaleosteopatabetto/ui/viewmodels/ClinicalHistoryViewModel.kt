@@ -175,9 +175,12 @@ class ClinicalHistoryViewModel : ViewModel() {
                     RealmConfig.realm.write {
                         val patient = query<DatabasePatient>("idPaziente == $0", state.patientId).find().firstOrNull()
                         if (patient != null) {
-                            // Update existing clinical history within the same transaction
-                            updateExistingClinicalHistoryInTransaction(patient.storiaClinica, state)
-                            // The patient is automatically saved when the transaction commits
+                            // Initialize StoriaClinica if it doesn't exist
+                            if (patient.storiaClinica == null) {
+                                patient.storiaClinica = StoriaClinica()
+                            }
+                            // Update clinical history within the same transaction
+                            updateExistingClinicalHistoryInTransaction(patient.storiaClinica!!, state)
                             true
                         } else {
                             false
@@ -199,11 +202,18 @@ class ClinicalHistoryViewModel : ViewModel() {
  * Update existing clinical history with new values while preserving existing data
  * This function must be called within a Realm write transaction
  */
-private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: StoriaClinica?, state: ClinicalHistoryUiState) {
-    if (existingStoriaClinica == null) return
+private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: StoriaClinica, state: ClinicalHistoryUiState) {
+    // Initialize patologieCroniche if null
+    if (existingStoriaClinica.patologieCroniche == null) {
+        existingStoriaClinica.patologieCroniche = PatologieCroniche()
+    }
     
     // Update chronic conditions
     existingStoriaClinica.patologieCroniche?.let { patologie ->
+        // Initialize nested allergieFarmaci if null
+        if (patologie.allergieFarmaci == null) {
+            patologie.allergieFarmaci = AllergieFarmaci()
+        }
         patologie.allergieFarmaci?.let { allergie ->
             allergie.presente = state.hasDrugAllergies
             allergie.listaAllergie.clear()
@@ -211,25 +221,46 @@ private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: St
                 allergie.listaAllergie.addAll(state.drugAllergiesList.split(",").map { it.trim() })
             }
         }
+        
+        // Initialize nested diabete if null
+        if (patologie.diabete == null) {
+            patologie.diabete = Diabete()
+        }
         patologie.diabete?.let { diabete ->
             diabete.presente = state.hasDiabetes
             diabete.tipologia = state.diabetesType
         }
+        
         patologie.ipertiroidismo = state.hasHyperthyroidism
         patologie.cardiopatia = state.hasHeartDisease
         patologie.ipertensioneArteriosa = state.hasHypertension
     }
     
+    // Initialize stileVita if null
+    if (existingStoriaClinica.stileVita == null) {
+        existingStoriaClinica.stileVita = StileVita()
+    }
+    
     // Update lifestyle factors
     existingStoriaClinica.stileVita?.let { stileVita ->
+        // Initialize nested tabagismo if null
+        if (stileVita.tabagismo == null) {
+            stileVita.tabagismo = Tabagismo()
+        }
         stileVita.tabagismo?.let { tabagismo ->
             tabagismo.stato = state.smokingStatus
             tabagismo.sigaretteGiorno = state.cigarettesPerDay.toIntOrNull() ?: 0
             tabagismo.anniFumo = state.yearsSmoking.toIntOrNull() ?: 0
         }
+        
         stileVita.lavoro = state.workType
         stileVita.professione = state.profession
         stileVita.oreLavoroGiorno = state.workHoursPerDay.toIntOrNull() ?: 0
+        
+        // Initialize nested attivitaSportiva if null
+        if (stileVita.attivitaSportiva == null) {
+            stileVita.attivitaSportiva = AttivitaSportiva()
+        }
         stileVita.attivitaSportiva?.let { attivita ->
             attivita.presente = state.hasPhysicalActivity
             attivita.sport.clear()
@@ -241,11 +272,25 @@ private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: St
         }
     }
     
+    // Initialize anamnesiPediatrica if null
+    if (existingStoriaClinica.anamnesiPediatrica == null) {
+        existingStoriaClinica.anamnesiPediatrica = AnamnesiPediatrica()
+    }
+    
     // Update pediatric history
     existingStoriaClinica.anamnesiPediatrica?.let { anamnesi ->
+        // Initialize nested gravidanza if null
+        if (anamnesi.gravidanza == null) {
+            anamnesi.gravidanza = Gravidanza()
+        }
         anamnesi.gravidanza?.let { gravidanza ->
             gravidanza.complicazioni = state.pregnancyComplications
             gravidanza.note = state.pregnancyNotes
+        }
+        
+        // Initialize nested parto if null
+        if (anamnesi.parto == null) {
+            anamnesi.parto = Parto()
         }
         anamnesi.parto?.let { parto ->
             parto.tipo = state.birthType
@@ -254,12 +299,18 @@ private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: St
             parto.punteggioApgar5min = state.apgarScore.toIntOrNull() ?: 0
             parto.note = state.birthNotes
         }
+        
+        // Initialize nested sviluppo if null
+        if (anamnesi.sviluppo == null) {
+            anamnesi.sviluppo = Sviluppo()
+        }
         anamnesi.sviluppo?.let { sviluppo ->
             sviluppo.primiPassiMesi = state.firstStepsMonths.toIntOrNull() ?: 0
             sviluppo.primeParoleMesi = state.firstWordsMonths.toIntOrNull() ?: 0
             sviluppo.problemiSviluppo = state.developmentProblems
             sviluppo.note = state.developmentNotes
         }
+        
         anamnesi.noteGenerali = state.pediatricGeneralNotes
     }
 }

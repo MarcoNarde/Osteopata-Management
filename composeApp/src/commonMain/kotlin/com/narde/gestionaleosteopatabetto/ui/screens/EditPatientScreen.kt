@@ -23,7 +23,6 @@ import com.narde.gestionaleosteopatabetto.data.database.models.Patient as Databa
 import com.narde.gestionaleosteopatabetto.data.database.utils.*
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
-import com.narde.gestionaleosteopatabetto.utils.DateUtils
 import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientField
@@ -148,8 +147,15 @@ fun EditPatientScreen(
                             // Save both personal data and clinical history
                             editPatientViewModel.updatePatient {
                                 clinicalHistoryViewModel.updateClinicalHistory {
-                                    // Both saves completed successfully
-                                    uiPatient?.let { onPatientUpdated(it) }
+                                    // Both saves completed - reload fresh data from database
+                                    if (isDatabaseSupported()) {
+                                        val repository = DatabaseInitializer.getPatientRepository()
+                                        repository?.getPatientById(patientId)?.let { updatedDbPatient ->
+                                            val databaseUtils = createDatabaseUtils()
+                                            val updatedUiPatient = databaseUtils.toUIPatient(updatedDbPatient)
+                                            onPatientUpdated(updatedUiPatient)
+                                        }
+                                    }
                                     onBackClick()
                                 }
                             }
