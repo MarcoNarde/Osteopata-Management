@@ -17,6 +17,7 @@ import com.narde.gestionaleosteopatabetto.data.sample.SampleData
 import com.narde.gestionaleosteopatabetto.ui.screens.AddPatientScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreenNew
+import com.narde.gestionaleosteopatabetto.ui.screens.EditPatientScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.VisitDetailsScreen
@@ -45,6 +46,8 @@ fun OsteopathManagementApp() {
     var showPatientDetails by remember { mutableStateOf(false) }
     var showPatientDetailsNew by remember { mutableStateOf(false) }
     var selectedPatientId by remember { mutableStateOf<String?>(null) }
+    var showEditPatientScreen by remember { mutableStateOf(false) }
+    var patientToEdit by remember { mutableStateOf<String?>(null) }
     var showVisitDetails by remember { mutableStateOf(false) }
     var selectedVisit by remember { mutableStateOf<Visit?>(null) }
     var showAddVisitScreen by remember { mutableStateOf(false) }
@@ -308,6 +311,25 @@ fun OsteopathManagementApp() {
                 }
             )
         }
+        showEditPatientScreen && patientToEdit != null -> {
+            val currentPatientToEdit = patientToEdit // Capture the value to avoid smart cast issues
+            EditPatientScreen(
+                patientId = currentPatientToEdit ?: "",
+                onBackClick = {
+                    showEditPatientScreen = false
+                    patientToEdit = null
+                },
+                onPatientUpdated = { updatedPatient ->
+                    showEditPatientScreen = false
+                    patientToEdit = null
+                    // Refresh patients list
+                    coroutineScope.launch {
+                        refreshPatients()
+                    }
+                    println("Patient updated: $updatedPatient")
+                }
+            )
+        }
         showPatientDetailsNew && selectedPatientId != null -> {
             PatientDetailsScreenNew(
                 patientId = selectedPatientId!!,
@@ -316,8 +338,10 @@ fun OsteopathManagementApp() {
                     selectedPatientId = null
                 },
                 onEditClick = {
-                    // TODO: Navigate to EditPatientScreen when it's created
-                    println("Edit button clicked for patient: $selectedPatientId")
+                    // Navigate to EditPatientScreen
+                    patientToEdit = selectedPatientId
+                    showPatientDetailsNew = false
+                    showEditPatientScreen = true
                 }
             )
         }

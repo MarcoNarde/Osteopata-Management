@@ -1,7 +1,6 @@
 package com.narde.gestionaleosteopatabetto.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -28,71 +27,57 @@ fun ClinicalHistoryEditForm(
     viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            // Chronic Conditions Section
-            ClinicalHistorySection(
-                title = stringResource(Res.string.chronic_conditions),
-                content = {
-                    ChronicConditionsEditContent(uiState, viewModel, focusManager)
-                }
-            )
-        }
+        // Chronic Conditions Section
+        ClinicalHistorySection(
+            title = stringResource(Res.string.chronic_conditions),
+            content = {
+                ChronicConditionsEditContent(uiState, viewModel, focusManager)
+            }
+        )
         
-        item {
-            // Lifestyle Factors Section
-            ClinicalHistorySection(
-                title = stringResource(Res.string.lifestyle_factors),
-                content = {
-                    LifestyleFactorsEditContent(uiState, viewModel, focusManager)
-                }
-            )
-        }
+        // Lifestyle Factors Section
+        ClinicalHistorySection(
+            title = stringResource(Res.string.lifestyle_factors),
+            content = {
+                LifestyleFactorsEditContent(uiState, viewModel, focusManager)
+            }
+        )
         
-        item {
-            // Pharmacological Therapies Section
-            ClinicalHistorySection(
-                title = stringResource(Res.string.pharmacological_therapies),
-                content = {
-                    PharmacologicalTherapiesEditContent(uiState, viewModel, focusManager)
-                }
-            )
-        }
+        // Pharmacological Therapies Section
+        ClinicalHistorySection(
+            title = stringResource(Res.string.pharmacological_therapies),
+            content = {
+                PharmacologicalTherapiesEditContent(uiState, viewModel, focusManager)
+            }
+        )
         
-        item {
-            // Interventions & Traumas Section
-            ClinicalHistorySection(
-                title = stringResource(Res.string.interventions_traumas),
-                content = {
-                    InterventionsTraumasEditContent(uiState, viewModel, focusManager)
-                }
-            )
-        }
+        // Interventions & Traumas Section
+        ClinicalHistorySection(
+            title = stringResource(Res.string.interventions_traumas),
+            content = {
+                InterventionsTraumasEditContent(uiState, viewModel, focusManager)
+            }
+        )
         
-        item {
-            // Diagnostic Tests Section
-            ClinicalHistorySection(
-                title = stringResource(Res.string.diagnostic_tests),
-                content = {
-                    DiagnosticTestsEditContent(uiState, viewModel, focusManager)
-                }
-            )
-        }
+        // Diagnostic Tests Section
+        ClinicalHistorySection(
+            title = stringResource(Res.string.diagnostic_tests),
+            content = {
+                DiagnosticTestsEditContent(uiState, viewModel, focusManager)
+            }
+        )
         
-        item {
-            // Pediatric History Section
-            ClinicalHistorySection(
-                title = stringResource(Res.string.pediatric_history),
-                content = {
-                    PediatricHistoryEditContent(uiState, viewModel, focusManager)
-                }
-            )
-        }
+        // Pediatric History Section
+        ClinicalHistorySection(
+            title = stringResource(Res.string.pediatric_history),
+            content = {
+                PediatricHistoryEditContent(uiState, viewModel, focusManager)
+            }
+        )
     }
 }
 
