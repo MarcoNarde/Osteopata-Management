@@ -15,7 +15,6 @@ import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
 import com.narde.gestionaleosteopatabetto.data.database.utils.createDatabaseUtils
 import com.narde.gestionaleosteopatabetto.data.sample.SampleData
 import com.narde.gestionaleosteopatabetto.ui.screens.AddPatientScreen
-import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreenNew
 import com.narde.gestionaleosteopatabetto.ui.screens.EditPatientScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientsScreen
@@ -39,11 +38,7 @@ fun OsteopathManagementApp() {
     val coroutineScope = rememberCoroutineScope()
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showAddPatientScreen by remember { mutableStateOf(false) }
-    var selectedPatient by remember { mutableStateOf<Patient?>(null) }
-    var selectedDatabasePatient by remember { mutableStateOf<com.narde.gestionaleosteopatabetto.data.database.models.Patient?>(null) }
 
-
-    var showPatientDetails by remember { mutableStateOf(false) }
     var showPatientDetailsNew by remember { mutableStateOf(false) }
     var selectedPatientId by remember { mutableStateOf<String?>(null) }
     var showEditPatientScreen by remember { mutableStateOf(false) }
@@ -345,23 +340,6 @@ fun OsteopathManagementApp() {
                 }
             )
         }
-        showPatientDetails && selectedDatabasePatient != null && selectedPatient != null -> {
-            PatientDetailsScreen(
-                patient = selectedPatient!!,
-                databasePatient = selectedDatabasePatient,
-                onBackClick = {
-                    showPatientDetails = false
-                    selectedDatabasePatient = null
-                    selectedPatient = null
-                },
-                onPatientUpdated = {
-                    // Refresh the patients list after update
-                    coroutineScope.launch {
-                        refreshPatients()
-                    }
-                }
-            )
-        }
         showAddPatientScreen -> {
             AddPatientScreen(
                 onBackClick = { showAddPatientScreen = false },
@@ -483,25 +461,18 @@ fun OsteopathManagementApp() {
                                         selectedPatientId = patient.id
                                         showPatientDetailsNew = true
                                     } else {
-                                        // Use the old PatientDetailsScreen (for comparison)
-                                        selectedPatient = patient
                                         // Find the corresponding database patient
                                         if (isDatabaseSupported()) {
                                             val repository = DatabaseInitializer.getPatientRepository()
                                             if (repository != null) {
                                                 try {
                                                     val dbPatient = repository.getPatientById(patient.id)
-                                                    if (dbPatient != null) {
-                                                        selectedDatabasePatient = dbPatient
-                                                        showPatientDetails = true
-                                                    }
                                                 } catch (e: Exception) {
                                                     println("Error loading patient details: ${e.message}")
                                                 }
                                             }
                                         } else {
                                             // If database not supported, show basic details with available info
-                                            showPatientDetails = true
                                         }
                                     }
                                 },
