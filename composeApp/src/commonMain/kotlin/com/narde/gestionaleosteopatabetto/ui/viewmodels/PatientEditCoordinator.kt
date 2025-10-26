@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.async
 
 /**
@@ -65,10 +64,10 @@ class PatientEditCoordinator(
                             isSuccess = true,
                             errorMessage = ""
                         )
-                        // Wait for UI feedback
-                        delay(1500)
+                        // Call onSuccess immediately - the loading overlay will remain visible
+                        // until navigation happens
                         onSuccess()
-                        // Reset success state
+                        // Reset success state after navigation
                         _state.value = _state.value.copy(isSuccess = false)
                     }
                     
