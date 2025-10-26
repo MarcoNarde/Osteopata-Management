@@ -175,14 +175,14 @@ fun EditPatientScreen(
                         },
                         enabled = !coordinatorState.isLoading,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
                         when {
                             coordinatorState.isLoading -> {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     strokeWidth = 2.dp
                                 )
                             }
@@ -190,14 +190,14 @@ fun EditPatientScreen(
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = stringResource(Res.string.patient_updated_success),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                             else -> {
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = stringResource(Res.string.save_changes),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -208,7 +208,7 @@ fun EditPatientScreen(
                                 coordinatorState.isSuccess -> stringResource(Res.string.patient_updated_success)
                                 else -> stringResource(Res.string.save_changes)
                             },
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 },
