@@ -271,7 +271,7 @@ private fun PersonalInformationCard(
                     }
                     if (calculatedAge > 0) {
                         PatientInfoRow(
-                            label = stringResource(Res.string.patient_age),
+                            label = stringResource(Res.string.age),
                             value = calculatedAge.toString()
                         )
                     }

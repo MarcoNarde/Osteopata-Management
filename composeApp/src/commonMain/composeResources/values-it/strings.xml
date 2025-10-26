@@ -42,7 +42,8 @@
     <string name="tax_code">Codice Fiscale</string>
     <string name="phone_number">Numero di Telefono</string>
     <string name="email">Email</string>
-    
+    <string name="age">Età</string>
+
     <!-- Anthropometric measurements -->
     <string name="anthropometric_measurements">Misure Antropometriche</string>
     <string name="height_cm">Altezza (cm)</string>

@@ -42,6 +42,7 @@
     <string name="tax_code">Tax Code (Codice Fiscale)</string>
     <string name="phone_number">Phone Number</string>
     <string name="email">Email</string>
+    <string name="age">Età</string>
     
     <!-- Anthropometric measurements -->
     <string name="anthropometric_measurements">Anthropometric Measurements</string>
