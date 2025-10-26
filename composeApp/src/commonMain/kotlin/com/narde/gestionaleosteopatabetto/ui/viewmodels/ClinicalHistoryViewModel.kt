@@ -11,6 +11,7 @@ import com.narde.gestionaleosteopatabetto.data.database.models.Patient as Databa
 import com.narde.gestionaleosteopatabetto.data.database.models.*
 import com.narde.gestionaleosteopatabetto.data.database.utils.createDatabaseUtils
 import io.realm.kotlin.ext.query
+import kotlin.random.Random
 
 /**
  * ViewModel for Clinical History editing functionality
@@ -66,7 +67,20 @@ class ClinicalHistoryViewModel : ViewModel() {
             firstWordsMonths = storiaClinica?.anamnesiPediatrica?.sviluppo?.primeParoleMesi?.toString() ?: "",
             developmentProblems = storiaClinica?.anamnesiPediatrica?.sviluppo?.problemiSviluppo ?: false,
             developmentNotes = storiaClinica?.anamnesiPediatrica?.sviluppo?.note ?: "",
-            pediatricGeneralNotes = storiaClinica?.anamnesiPediatrica?.noteGenerali ?: ""
+            pediatricGeneralNotes = storiaClinica?.anamnesiPediatrica?.noteGenerali ?: "",
+            
+            // Interventions & Traumas - Convert RealmList to List
+            interventions = storiaClinica?.interventiTrauma?.map { intervento ->
+                InterventionUiState(
+                    id = intervento.id,
+                    date = intervento.data,
+                    type = intervento.tipo,
+                    description = intervento.descrizione,
+                    treatment = intervento.trattamento,
+                    outcome = intervento.esito,
+                    isExpanded = false
+                )
+            } ?: emptyList()
         )
         
         _uiState.value = state
@@ -116,6 +130,73 @@ class ClinicalHistoryViewModel : ViewModel() {
             ClinicalHistoryBooleanField.PregnancyComplications -> currentState.copy(pregnancyComplications = value)
             ClinicalHistoryBooleanField.BirthComplications -> currentState.copy(birthComplications = value)
             ClinicalHistoryBooleanField.DevelopmentProblems -> currentState.copy(developmentProblems = value)
+        }
+    }
+    
+    /**
+     * Add a new intervention/trauma
+     */
+    fun addIntervention() {
+        val currentState = _uiState.value
+        val newIntervention = InterventionUiState(
+            id = "", // Empty ID for new interventions
+            isExpanded = true // Auto-expand new items for editing
+        )
+        _uiState.value = currentState.copy(
+            interventions = currentState.interventions + newIntervention
+        )
+    }
+    
+    /**
+     * Update a specific field of an intervention
+     */
+    fun updateInterventionField(index: Int, field: String, value: String) {
+        val currentState = _uiState.value
+        if (index in currentState.interventions.indices) {
+            val intervention = currentState.interventions[index]
+            val updatedIntervention = when (field) {
+                "date" -> intervention.copy(date = value)
+                "type" -> intervention.copy(type = value)
+                "description" -> intervention.copy(description = value)
+                "treatment" -> intervention.copy(treatment = value)
+                "outcome" -> intervention.copy(outcome = value)
+                else -> intervention
+            }
+            _uiState.value = currentState.copy(
+                interventions = currentState.interventions.toMutableList().apply {
+                    set(index, updatedIntervention)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Delete an intervention
+     */
+    fun deleteIntervention(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.interventions.indices) {
+            _uiState.value = currentState.copy(
+                interventions = currentState.interventions.toMutableList().apply {
+                    removeAt(index)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Toggle expand/collapse state of an intervention
+     */
+    fun toggleInterventionExpanded(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.interventions.indices) {
+            val intervention = currentState.interventions[index]
+            val updatedIntervention = intervention.copy(isExpanded = !intervention.isExpanded)
+            _uiState.value = currentState.copy(
+                interventions = currentState.interventions.toMutableList().apply {
+                    set(index, updatedIntervention)
+                }
+            )
         }
     }
     
@@ -289,6 +370,25 @@ private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: St
         }
         
         anamnesi.noteGenerali = state.pediatricGeneralNotes
+    }
+    
+    // Update Interventions & Traumas
+    existingStoriaClinica.interventiTrauma.clear()
+    state.interventions.forEach { interventionUi ->
+        val intervention = InterventoTrauma().apply {
+            // Generate UUID for new interventions (those with empty id)
+            id = if (interventionUi.id.isNotEmpty()) {
+                interventionUi.id
+            } else {
+                "INT${System.currentTimeMillis()}${Random.nextInt(1000)}"
+            }
+            data = interventionUi.date
+            tipo = interventionUi.type
+            descrizione = interventionUi.description
+            trattamento = interventionUi.treatment
+            esito = interventionUi.outcome
+        }
+        existingStoriaClinica.interventiTrauma.add(intervention)
     }
 }
 

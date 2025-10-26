@@ -195,9 +195,6 @@
     <string name="outcome">Outcome</string>
     <string name="trauma">Trauma</string>
     <string name="surgical_intervention">Surgical Intervention</string>
-    <string name="other">Other</string>
-    <string name="complete_recovery">Complete Recovery</string>
-    <string name="sequelae">Sequelae</string>
     
     <!-- Diagnostic Tests -->
     <string name="test_type">Test Type</string>
@@ -243,4 +240,14 @@
     <string name="no_interventions">No interventions or traumas recorded</string>
     <string name="no_tests">No diagnostic tests recorded</string>
     <string name="no_pediatric_history">No pediatric history recorded</string>
+    
+    <!-- Intervention types and outcomes -->
+    <string name="other">Other</string>
+    <string name="complete_recovery">Complete Recovery</string>
+    <string name="sequelae">Sequelae</string>
+    <string name="delete_intervention">Delete Intervention</string>
+    <string name="add_new_intervention">Add New Intervention</string>
+    <string name="intervention_details">Intervention Details</string>
+    <string name="intervention_date">Date</string>
+    <string name="intervention_date_placeholder">YYYY-MM-DD</string>
 </resources>

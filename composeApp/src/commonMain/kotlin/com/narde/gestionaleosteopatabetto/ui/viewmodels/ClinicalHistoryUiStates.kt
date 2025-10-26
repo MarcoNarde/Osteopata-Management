@@ -41,6 +41,9 @@ data class ClinicalHistoryUiState(
     val developmentNotes: String = "",
     val pediatricGeneralNotes: String = "",
     
+    // Interventions & Traumas
+    val interventions: List<InterventionUiState> = emptyList(),
+    
     // UI state
     val isUpdating: Boolean = false,
     val isUpdateSuccessful: Boolean = false,
@@ -87,4 +90,17 @@ enum class ClinicalHistoryBooleanField {
     BirthComplications,
     DevelopmentProblems
 }
+
+/**
+ * UI State for a single Intervention/Trauma
+ */
+data class InterventionUiState(
+    val id: String = "",
+    val date: String = "",
+    val type: String = "",
+    val description: String = "",
+    val treatment: String = "",
+    val outcome: String = "",
+    val isExpanded: Boolean = false
+)
 

@@ -3,6 +3,11 @@ package com.narde.gestionaleosteopatabetto.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryBooleanField
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.InterventionUiState
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -524,30 +530,310 @@ private fun PharmacologicalTherapiesEditContent(
  */
 @Composable
 private fun InterventionsTraumasEditContent(
-    _uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
-    _viewModel: ClinicalHistoryViewModel,
+    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = stringResource(Res.string.interventions_traumas_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        // Note: For now, interventions are managed through the view mode
-        // Future enhancement: Add dynamic list management for interventions
-        OutlinedTextField(
-            value = "", // Placeholder for future implementation
-            onValueChange = { },
-            label = { Text(stringResource(Res.string.add_intervention)) },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+        // Display list of interventions
+        if (uiState.interventions.isEmpty()) {
+            Text(
+                text = stringResource(Res.string.no_interventions),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
+        } else {
+            uiState.interventions.forEachIndexed { index, intervention ->
+                InterventionCard(
+                    intervention = intervention,
+                    index = index,
+                    viewModel = viewModel,
+                    focusManager = focusManager,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        
+        // Add new intervention button
+        Button(
+            onClick = { viewModel.addIntervention() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                contentDescription = stringResource(Res.string.add_new_intervention)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(Res.string.add_new_intervention))
+        }
+    }
+}
+
+/**
+ * Intervention Card Component
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun InterventionCard(
+    intervention: InterventionUiState,
+    index: Int,
+    viewModel: ClinicalHistoryViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager,
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember(intervention.isExpanded) { mutableStateOf(intervention.isExpanded) }
+    
+    Card(
+        modifier = modifier,
+        onClick = { 
+            isExpanded = !isExpanded
+            viewModel.toggleInterventionExpanded(index)
+        },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isExpanded) 
+                MaterialTheme.colorScheme.surfaceVariant 
+            else 
+                MaterialTheme.colorScheme.surface
         )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Collapsed state header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // Type badge
+                    if (intervention.type.isNotEmpty()) {
+                        AssistChip(
+                            onClick = { },
+                            label = {
+                                Text(
+                                    text = getInterventionTypeLabel(intervention.type),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        )
+                    }
+                    // Date
+                    if (intervention.date.isNotEmpty()) {
+                        Text(
+                            text = stringResource(Res.string.intervention_date) + ": ${intervention.date}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    // Description preview
+                    if (intervention.description.isNotEmpty()) {
+                        Text(
+                            text = intervention.description.take(50) + if (intervention.description.length > 50) "..." else "",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(Res.string.intervention_details),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                    }
+                }
+                
+                // Expand/Collapse icon
+                Icon(
+                    imageVector = if (isExpanded) 
+                        Icons.Default.KeyboardArrowUp 
+                    else 
+                        Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand"
+                )
+            }
+            
+            // Expanded state - full form
+            if (isExpanded) {
+                VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                // Date field
+                ItalianDateInput(
+                    value = intervention.date,
+                    onValueChange = { viewModel.updateInterventionField(index, "date", it) },
+                    label = stringResource(Res.string.intervention_date),
+                    placeholder = stringResource(Res.string.intervention_date_placeholder),
+                    showAge = false,
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                // Type dropdown
+                var typeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = typeExpanded,
+                    onExpandedChange = { typeExpanded = !typeExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = getInterventionTypeLabel(intervention.type),
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text(stringResource(Res.string.intervention_type)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.trauma)) },
+                            onClick = {
+                                viewModel.updateInterventionField(index, "type", "trauma")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.surgical_intervention)) },
+                            onClick = {
+                                viewModel.updateInterventionField(index, "type", "intervento_chirurgico")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.other)) },
+                            onClick = {
+                                viewModel.updateInterventionField(index, "type", "altro")
+                                typeExpanded = false
+                            }
+                        )
+                    }
+                }
+                
+                // Description field (multiline)
+                OutlinedTextField(
+                    value = intervention.description,
+                    onValueChange = { viewModel.updateInterventionField(index, "description", it) },
+                    label = { Text(stringResource(Res.string.description)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    )
+                )
+                
+                // Treatment field (multiline)
+                OutlinedTextField(
+                    value = intervention.treatment,
+                    onValueChange = { viewModel.updateInterventionField(index, "treatment", it) },
+                    label = { Text(stringResource(Res.string.treatment)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    )
+                )
+                
+                // Outcome dropdown
+                var outcomeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = outcomeExpanded,
+                    onExpandedChange = { outcomeExpanded = !outcomeExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = getOutcomeLabel(intervention.outcome),
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text(stringResource(Res.string.outcome)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = outcomeExpanded) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = outcomeExpanded,
+                        onDismissRequest = { outcomeExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.complete_recovery)) },
+                            onClick = {
+                                viewModel.updateInterventionField(index, "outcome", "guarigione_completa")
+                                outcomeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.sequelae)) },
+                            onClick = {
+                                viewModel.updateInterventionField(index, "outcome", "sequeli")
+                                outcomeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.other)) },
+                            onClick = {
+                                viewModel.updateInterventionField(index, "outcome", "altro")
+                                outcomeExpanded = false
+                            }
+                        )
+                    }
+                }
+                
+                // Delete button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = { viewModel.deleteIntervention(index) },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                            contentDescription = stringResource(Res.string.delete_intervention),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(Res.string.delete_intervention),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Helper function to get intervention type label
+ */
+private fun getInterventionTypeLabel(type: String): String {
+    return when (type) {
+        "trauma" -> "Trauma"
+        "intervento_chirurgico" -> "Intervento Chirurgico"
+        "altro" -> "Altro"
+        else -> ""
+    }
+}
+
+/**
+ * Helper function to get outcome label
+ */
+private fun getOutcomeLabel(outcome: String): String {
+    return when (outcome) {
+        "guarigione_completa" -> "Guarigione Completa"
+        "sequeli" -> "Sequele"
+        "altro" -> "Altro"
+        else -> ""
     }
 }
 

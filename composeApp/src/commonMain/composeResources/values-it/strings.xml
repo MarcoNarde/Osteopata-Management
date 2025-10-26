@@ -150,7 +150,6 @@
     <string name="hyperthyroidism">Ipertiroidismo</string>
     <string name="heart_disease">Cardiopatia</string>
     <string name="arterial_hypertension">Ipertensione Arteriosa</string>
-    <string name="other_pathologies">Altre Patologie</string>
     <string name="present">Presente</string>
     <string name="not_present">Non Presente</string>
     <string name="type">Tipo</string>
@@ -195,9 +194,6 @@
     <string name="outcome">Esito</string>
     <string name="trauma">Trauma</string>
     <string name="surgical_intervention">Intervento Chirurgico</string>
-    <string name="other">Altro</string>
-    <string name="complete_recovery">Guarigione Completa</string>
-    <string name="sequelae">Sequeli</string>
     
     <!-- Diagnostic Tests -->
     <string name="test_type">Tipo Esame</string>
@@ -243,4 +239,14 @@
     <string name="no_interventions">Nessun intervento o trauma registrato</string>
     <string name="no_tests">Nessun esame strumentale registrato</string>
     <string name="no_pediatric_history">Nessuna anamnesi pediatrica registrata</string>
+    
+    <!-- Intervention types and outcomes -->
+    <string name="other">Altro</string>
+    <string name="complete_recovery">Guarigione Completa</string>
+    <string name="sequelae">Sequele</string>
+    <string name="delete_intervention">Elimina Intervento</string>
+    <string name="add_new_intervention">Aggiungi Nuovo Intervento</string>
+    <string name="intervention_details">Dettagli Intervento</string>
+    <string name="intervention_date">Data</string>
+    <string name="intervention_date_placeholder">GG-MM-AAAA</string>
 </resources>
