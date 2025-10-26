@@ -64,8 +64,17 @@ fun EditPatientScreen(
     }
     val clinicalHistoryViewModel: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryViewModel = viewModel()
     
+    // Unified coordinator for patient edit operations
+    val coordinator: com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientEditCoordinator = remember {
+        com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientEditCoordinator(
+            editPatientViewModel,
+            clinicalHistoryViewModel
+        )
+    }
+    
     val editPatientUiState by editPatientViewModel.uiState.collectAsState()
     val clinicalHistoryUiState by clinicalHistoryViewModel.uiState.collectAsState()
+    val coordinatorState by coordinator.state.collectAsState()
     
     val focusManager = LocalFocusManager.current
     
@@ -147,36 +156,34 @@ fun EditPatientScreen(
                     // Save button
                     TextButton(
                         onClick = {
-                            // Save both personal data and clinical history
-                            editPatientViewModel.updatePatient {
-                                clinicalHistoryViewModel.updateClinicalHistory {
-                                    // Both saves completed - reload fresh data from database
-                                    if (isDatabaseSupported()) {
-                                        val repository = DatabaseInitializer.getPatientRepository()
-                                        repository?.getPatientById(patientId)?.let { updatedDbPatient ->
-                                            val databaseUtils = createDatabaseUtils()
-                                            val updatedUiPatient = databaseUtils.toUIPatient(updatedDbPatient)
-                                            // onPatientUpdated already handles navigation back
-                                            onPatientUpdated(updatedUiPatient)
-                                        }
+                            // Use unified coordinator to save both personal data and clinical history
+                            coordinator.savePatient {
+                                // Both saves completed - reload fresh data from database
+                                if (isDatabaseSupported()) {
+                                    val repository = DatabaseInitializer.getPatientRepository()
+                                    repository?.getPatientById(patientId)?.let { updatedDbPatient ->
+                                        val databaseUtils = createDatabaseUtils()
+                                        val updatedUiPatient = databaseUtils.toUIPatient(updatedDbPatient)
+                                        // onPatientUpdated already handles navigation back
+                                        onPatientUpdated(updatedUiPatient)
                                     }
                                 }
                             }
                         },
-                        enabled = !editPatientUiState.isUpdating && !clinicalHistoryUiState.isUpdating,
+                        enabled = !coordinatorState.isLoading,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
                         when {
-                            editPatientUiState.isUpdating || clinicalHistoryUiState.isUpdating -> {
+                            coordinatorState.isLoading -> {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     color = MaterialTheme.colorScheme.primary,
                                     strokeWidth = 2.dp
                                 )
                             }
-                            editPatientUiState.isUpdateSuccessful && clinicalHistoryUiState.isUpdateSuccessful -> {
+                            coordinatorState.isSuccess -> {
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = stringResource(Res.string.patient_updated_success),
@@ -194,8 +201,8 @@ fun EditPatientScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = when {
-                                editPatientUiState.isUpdating || clinicalHistoryUiState.isUpdating -> stringResource(Res.string.updating)
-                                editPatientUiState.isUpdateSuccessful && clinicalHistoryUiState.isUpdateSuccessful -> stringResource(Res.string.patient_updated_success)
+                                coordinatorState.isLoading -> stringResource(Res.string.updating)
+                                coordinatorState.isSuccess -> stringResource(Res.string.patient_updated_success)
                                 else -> stringResource(Res.string.save_changes)
                             },
                             color = MaterialTheme.colorScheme.primary
@@ -266,8 +273,8 @@ fun EditPatientScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Success message for personal data
-                        if (editPatientUiState.isUpdateSuccessful) {
+                        // Success message from unified coordinator
+                        if (coordinatorState.isSuccess) {
                             item {
                                 Card(
                                     colors = CardDefaults.cardColors(
@@ -284,8 +291,8 @@ fun EditPatientScreen(
                             }
                         }
 
-                        // Error message for personal data
-                        if (editPatientUiState.errorMessage.isNotEmpty()) {
+                        // Error message from unified coordinator
+                        if (coordinatorState.errorMessage.isNotEmpty()) {
                             item {
                                 Card(
                                     colors = CardDefaults.cardColors(
@@ -293,47 +300,31 @@ fun EditPatientScreen(
                                     ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(
-                                        text = editPatientUiState.errorMessage,
-                                        modifier = Modifier.padding(16.dp),
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
-                            }
-                        }
-
-                        // Success message for clinical history
-                        if (clinicalHistoryUiState.isUpdateSuccessful) {
-                            item {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = stringResource(Res.string.patient_update_success_message),
-                                        modifier = Modifier.padding(16.dp),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                        }
-
-                        // Error message for clinical history
-                        if (clinicalHistoryUiState.errorMessage.isNotEmpty()) {
-                            item {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = clinicalHistoryUiState.errorMessage,
-                                        modifier = Modifier.padding(16.dp),
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
+                                    Column(
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Text(
+                                            text = coordinatorState.errorMessage,
+                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                        // Show specific errors if available
+                                        if (coordinatorState.personalDataError != null) {
+                                            Text(
+                                                text = "Personal data: ${coordinatorState.personalDataError}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
+                                        }
+                                        if (coordinatorState.clinicalHistoryError != null) {
+                                            Text(
+                                                text = "Clinical history: ${coordinatorState.clinicalHistoryError}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

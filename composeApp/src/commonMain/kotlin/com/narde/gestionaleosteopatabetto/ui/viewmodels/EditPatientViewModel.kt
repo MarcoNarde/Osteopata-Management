@@ -150,60 +150,32 @@ class EditPatientViewModel(
     
     /**
      * Validate and update patient using domain layer
+     * Returns Result<Unit> for use by coordinator
      */
-    fun updatePatient(onSuccess: () -> Unit) {
+    suspend fun updatePatient(): Result<Unit> {
         val state = _uiState.value
         
         // UI-level validation (for immediate feedback to user)
         val validationResult = validatePatientData(state)
         if (!validationResult.isValid) {
             _uiState.value = state.copy(errorMessage = validationResult.errorMessage)
-            return
+            return Result.failure(Exception(validationResult.errorMessage))
         }
         
         // Convert UI state to domain model
         val domainPatient = state.toDomainModel()
         
-        // Update patient via domain layer
-        viewModelScope.launch {
-            _uiState.value = state.copy(isUpdating = true, errorMessage = "", isUpdateSuccessful = false)
-            
-            try {
-                // Call use case with domain model
-                updatePatientUseCase(domainPatient).collect { result ->
-                    result.fold(
-                        onSuccess = { _ ->
-                            println("EditPatientViewModel: Patient updated successfully via domain layer")
-                            // Show success state first
-                            _uiState.value = state.copy(
-                                isUpdating = false, 
-                                isUpdateSuccessful = true,
-                                errorMessage = ""
-                            )
-                            // Wait a moment to show success feedback, then call onSuccess
-                            delay(1500) // Show success for 1.5 seconds
-                            onSuccess()
-                            // Reset success state after switching to view mode
-                            _uiState.value = _uiState.value.copy(isUpdateSuccessful = false)
-                        },
-                        onFailure = { error ->
-                            println("EditPatientViewModel: Patient update failed - ${error.message}")
-                            _uiState.value = state.copy(
-                                isUpdating = false,
-                                errorMessage = error.message ?: "Failed to update patient",
-                                isUpdateSuccessful = false
-                            )
-                        }
-                    )
-                }
-            } catch (e: Exception) {
-                println("EditPatientViewModel: Exception during update - ${e.message}")
-                _uiState.value = state.copy(
-                    isUpdating = false,
-                    errorMessage = "Error: ${e.message}",
-                    isUpdateSuccessful = false
-                )
+        return try {
+            // Call use case with domain model
+            var finalResult: Result<Unit>? = null
+            updatePatientUseCase(domainPatient).collect { result ->
+                finalResult = result.map { Unit }
+                println("EditPatientViewModel: Patient updated successfully via domain layer")
             }
+            finalResult ?: Result.failure(Exception("No result from use case"))
+        } catch (e: Exception) {
+            println("EditPatientViewModel: Exception during update - ${e.message}")
+            Result.failure(e)
         }
     }
     

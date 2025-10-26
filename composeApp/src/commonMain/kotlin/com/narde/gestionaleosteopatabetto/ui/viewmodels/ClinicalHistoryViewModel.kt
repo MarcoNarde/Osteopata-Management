@@ -1,12 +1,9 @@
 package com.narde.gestionaleosteopatabetto.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
 import com.narde.gestionaleosteopatabetto.data.database.RealmConfig
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
@@ -124,42 +121,22 @@ class ClinicalHistoryViewModel : ViewModel() {
     
     /**
      * Validate and update clinical history
+     * Returns Result<Unit> for use by coordinator
      */
-    fun updateClinicalHistory(onSuccess: () -> Unit) {
+    suspend fun updateClinicalHistory(): Result<Unit> {
         val state = _uiState.value
         
-        // Update database
-        viewModelScope.launch {
-            _uiState.value = state.copy(isUpdating = true, errorMessage = "", isUpdateSuccessful = false)
-            
-            try {
-                val success = updateClinicalHistoryInDatabase(state)
-                if (success) {
-                    // Show success state first
-                    _uiState.value = state.copy(
-                        isUpdating = false, 
-                        isUpdateSuccessful = true,
-                        errorMessage = ""
-                    )
-                    // Wait a moment to show success feedback, then call onSuccess
-                    delay(1500) // Show success for 1.5 seconds
-                    onSuccess()
-                    // Reset success state after switching to view mode
-                    _uiState.value = _uiState.value.copy(isUpdateSuccessful = false)
-                } else {
-                    _uiState.value = state.copy(
-                        isUpdating = false,
-                        errorMessage = "Failed to update clinical history",
-                        isUpdateSuccessful = false
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = state.copy(
-                    isUpdating = false,
-                    errorMessage = "Error: ${e.message}",
-                    isUpdateSuccessful = false
-                )
+        return try {
+            val success = updateClinicalHistoryInDatabase(state)
+            if (success) {
+                println("ClinicalHistoryViewModel: Clinical history updated successfully")
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to update clinical history"))
             }
+        } catch (e: Exception) {
+            println("ClinicalHistoryViewModel: Exception during update - ${e.message}")
+            Result.failure(e)
         }
     }
     
