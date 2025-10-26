@@ -7,27 +7,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
-import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
 import com.narde.gestionaleosteopatabetto.data.database.models.Patient as DatabasePatient
-import com.narde.gestionaleosteopatabetto.data.database.models.Genitori
-import com.narde.gestionaleosteopatabetto.data.database.models.Padre
-import com.narde.gestionaleosteopatabetto.data.database.models.Madre
 import com.narde.gestionaleosteopatabetto.data.database.utils.*
 import com.narde.gestionaleosteopatabetto.utils.DateUtils
+import com.narde.gestionaleosteopatabetto.domain.usecases.UpdatePatientUseCase
 
 /**
  * ViewModel for Edit Patient functionality
  * Handles business logic, validation, and state management for patient updates
+ * Uses domain layer (UpdatePatientUseCase) following clean architecture principles
  */
-class EditPatientViewModel : ViewModel() {
-    
-    // Database utils instance
-    private val _databaseUtils = createDatabaseUtils()
-    
+class EditPatientViewModel(
+    private val updatePatientUseCase: UpdatePatientUseCase
+) : ViewModel() {
+
     private val _uiState = MutableStateFlow(EditPatientUiState())
     val uiState: StateFlow<EditPatientUiState> = _uiState.asStateFlow()
     
@@ -155,44 +149,55 @@ class EditPatientViewModel : ViewModel() {
     }
     
     /**
-     * Validate and update patient
+     * Validate and update patient using domain layer
      */
     fun updatePatient(onSuccess: () -> Unit) {
         val state = _uiState.value
         
-        // Validation
+        // UI-level validation (for immediate feedback to user)
         val validationResult = validatePatientData(state)
         if (!validationResult.isValid) {
             _uiState.value = state.copy(errorMessage = validationResult.errorMessage)
             return
         }
         
-        // Update database
+        // Convert UI state to domain model
+        val domainPatient = state.toDomainModel()
+        
+        // Update patient via domain layer
         viewModelScope.launch {
             _uiState.value = state.copy(isUpdating = true, errorMessage = "", isUpdateSuccessful = false)
             
             try {
-                val success = updatePatientInDatabase(state)
-                if (success) {
-                    // Show success state first
-                    _uiState.value = state.copy(
-                        isUpdating = false, 
-                        isUpdateSuccessful = true,
-                        errorMessage = ""
-                    )
-                    // Wait a moment to show success feedback, then call onSuccess
-                    delay(1500) // Show success for 1.5 seconds
-                    onSuccess()
-                    // Reset success state after switching to view mode
-                    _uiState.value = _uiState.value.copy(isUpdateSuccessful = false)
-                } else {
-                    _uiState.value = state.copy(
-                        isUpdating = false,
-                        errorMessage = "Failed to update patient",
-                        isUpdateSuccessful = false
+                // Call use case with domain model
+                updatePatientUseCase(domainPatient).collect { result ->
+                    result.fold(
+                        onSuccess = { _ ->
+                            println("EditPatientViewModel: Patient updated successfully via domain layer")
+                            // Show success state first
+                            _uiState.value = state.copy(
+                                isUpdating = false, 
+                                isUpdateSuccessful = true,
+                                errorMessage = ""
+                            )
+                            // Wait a moment to show success feedback, then call onSuccess
+                            delay(1500) // Show success for 1.5 seconds
+                            onSuccess()
+                            // Reset success state after switching to view mode
+                            _uiState.value = _uiState.value.copy(isUpdateSuccessful = false)
+                        },
+                        onFailure = { error ->
+                            println("EditPatientViewModel: Patient update failed - ${error.message}")
+                            _uiState.value = state.copy(
+                                isUpdating = false,
+                                errorMessage = error.message ?: "Failed to update patient",
+                                isUpdateSuccessful = false
+                            )
+                        }
                     )
                 }
             } catch (e: Exception) {
+                println("EditPatientViewModel: Exception during update - ${e.message}")
                 _uiState.value = state.copy(
                     isUpdating = false,
                     errorMessage = "Error: ${e.message}",
@@ -222,119 +227,117 @@ class EditPatientViewModel : ViewModel() {
         }
     }
     
-    /**
-     * Data layer: Update patient in database
-     */
-    private suspend fun updatePatientInDatabase(state: EditPatientUiState): Boolean {
-        return try {
-            if (isDatabaseSupported()) {
-                val repository = DatabaseInitializer.getPatientRepository()
-                repository?.let {
-                    // Convert UI state to database model for update
-                    val updatedPatient = state.toDatabaseModel(_databaseUtils)
-                    it.savePatient(updatedPatient) // savePatient handles both create and update
-                    true
-                } ?: false
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            println("Error updating patient: ${e.message}")
-            false
-        }
-    }
 }
 
 /**
- * Extension to convert UI state to database model for update
+ * Extension to convert UI state to domain model for update
  */
-private fun EditPatientUiState.toDatabaseModel(databaseUtils: DatabaseUtilsInterface): DatabasePatient {
-    // Create updated patient using existing ID
-    return databaseUtils.createNewPatient(patientId).apply {
-        // Override ID to maintain the existing patient ID
-        idPaziente = this@toDatabaseModel.patientId
-        
-        datiPersonali?.apply {
-            nome = firstName
-            cognome = lastName
-            // Convert Italian format (DD/MM/AAAA) to ISO format (YYYY-MM-DD) for database storage
-            dataNascita = DateUtils.convertItalianToIsoFormat(birthDate)
-            sesso = gender
-            luogoNascita = placeOfBirth
-            codiceFiscale = taxCode
-            telefonoPaziente = phone
-            emailPaziente = this@toDatabaseModel.email
-            
-            // Anthropometric measurements
-            altezza = height.toIntOrNull() ?: 0
-            peso = weight.toDoubleOrNull() ?: 0.0
-            bmi = this@toDatabaseModel.bmi.toDoubleOrNull() // BMI can be null
-            latoDominante = dominantSide
-        }
-        
-        indirizzo?.apply {
-            via = street
-            citta = city
-            cap = zipCode
-            provincia = province
-            nazione = country
-            tipoIndirizzo = "residenza"
-        }
-        
-        privacy?.apply {
-            consensoTrattamento = treatmentConsent
-            consensoMarketing = marketingConsent
-            consensoTerzeparti = thirdPartyConsent
-            dataConsenso = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-        }
-        
-        // Handle parent information based on patient age and data availability
-        if (isMinor) {
-            // Patient is a minor - ensure parent data structure exists and populate it
-            if (genitori == null) {
-                genitori = Genitori().apply {
-                    padre = Padre()
-                    madre = Madre()
-                }
-            }
-            
-            // Populate father information if provided
-            if (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank()) {
-                genitori?.padre?.apply {
-                    nome = fatherFirstName
-                    cognome = fatherLastName
-                }
-            } else {
-                // Clear father information if not provided
-                genitori?.padre?.apply {
-                    nome = ""
-                    cognome = ""
-                }
-            }
-            
-            // Populate mother information if provided
-            if (motherFirstName.isNotBlank() || motherLastName.isNotBlank()) {
-                genitori?.madre?.apply {
-                    nome = motherFirstName
-                    cognome = motherLastName
-                }
-            } else {
-                // Clear mother information if not provided
-                genitori?.madre?.apply {
-                    nome = ""
-                    cognome = ""
-                }
-            }
+private fun EditPatientUiState.toDomainModel(): com.narde.gestionaleosteopatabetto.domain.models.Patient {
+    // Parse birth date from Italian format (DD/MM/YYYY) to LocalDate
+    val birthDateParsed = try {
+        if (birthDate.isNotEmpty()) {
+            kotlinx.datetime.LocalDate.parse(
+                DateUtils.convertItalianToIsoFormat(birthDate)
+            )
         } else {
-            // Patient is an adult - clear parent information
-            genitori?.padre?.apply {
-                nome = ""
-                cognome = ""
-            }
-            genitori?.madre?.apply {
-                nome = ""
-                cognome = ""
-            }
+            null
         }
+    } catch (e: Exception) {
+        null
     }
+    
+    // Convert gender string to enum
+    val genderEnum = when (gender) {
+        "M" -> com.narde.gestionaleosteopatabetto.domain.models.Gender.MALE
+        "F" -> com.narde.gestionaleosteopatabetto.domain.models.Gender.FEMALE
+        else -> com.narde.gestionaleosteopatabetto.domain.models.Gender.MALE
+    }
+    
+    // Convert anthropometric data if available
+    val anthropometricData = if (height.isNotBlank() && weight.isNotBlank()) {
+        val heightInt = height.toIntOrNull() ?: 0
+        val weightDouble = weight.toDoubleOrNull() ?: 0.0
+        val bmiDouble = bmi.toDoubleOrNull()
+        val dominantSideEnum = when (dominantSide) {
+            "dx" -> com.narde.gestionaleosteopatabetto.domain.models.DominantSide.RIGHT
+            "sx" -> com.narde.gestionaleosteopatabetto.domain.models.DominantSide.LEFT
+            else -> com.narde.gestionaleosteopatabetto.domain.models.DominantSide.RIGHT
+        }
+        
+        com.narde.gestionaleosteopatabetto.domain.models.AnthropometricData(
+            height = heightInt,
+            weight = weightDouble,
+            bmi = bmiDouble,
+            dominantSide = dominantSideEnum
+        )
+    } else {
+        null
+    }
+    
+    // Convert address if available
+    val address = if (street.isNotBlank() || city.isNotBlank()) {
+        com.narde.gestionaleosteopatabetto.domain.models.Address(
+            street = street,
+            city = city,
+            zipCode = zipCode,
+            province = province,
+            country = country
+        )
+    } else {
+        null
+    }
+    
+    // Create privacy consents
+    val privacyConsents = com.narde.gestionaleosteopatabetto.domain.models.PrivacyConsents(
+        treatmentConsent = treatmentConsent,
+        marketingConsent = marketingConsent,
+        thirdPartyConsent = thirdPartyConsent,
+        consentDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date.toString(),
+        notes = null
+    )
+    
+    // Create parent info for minors
+    val parentInfo = if (isMinor) {
+        val father = if (fatherFirstName.isNotBlank() || fatherLastName.isNotBlank()) {
+            com.narde.gestionaleosteopatabetto.domain.models.Parent(
+                firstName = fatherFirstName,
+                lastName = fatherLastName
+            )
+        } else {
+            null
+        }
+        
+        val mother = if (motherFirstName.isNotBlank() || motherLastName.isNotBlank()) {
+            com.narde.gestionaleosteopatabetto.domain.models.Parent(
+                firstName = motherFirstName,
+                lastName = motherLastName
+            )
+        } else {
+            null
+        }
+        
+        com.narde.gestionaleosteopatabetto.domain.models.ParentInfo(
+            father = father,
+            mother = mother
+        )
+    } else {
+        null
+    }
+    
+    // Create and return domain Patient model
+    return com.narde.gestionaleosteopatabetto.domain.models.Patient(
+        id = patientId,
+        firstName = firstName,
+        lastName = lastName,
+        birthDate = birthDateParsed,
+        gender = genderEnum,
+        placeOfBirth = placeOfBirth,
+        taxCode = taxCode,
+        phone = phone,
+        email = email,
+        address = address,
+        anthropometricData = anthropometricData,
+        privacyConsents = privacyConsents,
+        parentInfo = parentInfo
+    )
 }

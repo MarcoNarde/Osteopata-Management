@@ -27,6 +27,7 @@ import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.PatientField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ConsentType
+import com.narde.gestionaleosteopatabetto.ui.factories.ViewModelFactory
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -58,7 +59,9 @@ fun EditPatientScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
     // ViewModels
-    val editPatientViewModel: EditPatientViewModel = viewModel()
+    val editPatientViewModel: EditPatientViewModel = remember { 
+        ViewModelFactory.createEditPatientViewModel() 
+    }
     val clinicalHistoryViewModel: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryViewModel = viewModel()
     
     val editPatientUiState by editPatientViewModel.uiState.collectAsState()

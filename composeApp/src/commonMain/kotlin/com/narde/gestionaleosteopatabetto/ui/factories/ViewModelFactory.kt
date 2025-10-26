@@ -2,10 +2,11 @@ package com.narde.gestionaleosteopatabetto.ui.factories
 
 import androidx.compose.runtime.Composable
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddPatientViewModel
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditPatientViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddVisitViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.EditVisitViewModel
 import com.narde.gestionaleosteopatabetto.domain.usecases.SavePatientUseCaseImpl
-import com.narde.gestionaleosteopatabetto.domain.usecases.UpdatePatientUseCase
+import com.narde.gestionaleosteopatabetto.domain.usecases.UpdatePatientUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.UpdateVisitUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.GetVisitsByPatientUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.usecases.SaveVisitUseCaseImpl
@@ -28,25 +29,12 @@ object ViewModelFactory {
     }
     
     /**
-     * Create UpdatePatientUseCase with proper dependencies
-     * For now, we'll create a mock use case until the full domain layer is implemented
+     * Create EditPatientViewModel with proper dependencies
+     * Uses domain layer with UpdatePatientUseCase
      */
-    fun createUpdatePatientUseCase(): UpdatePatientUseCase {
-        // TODO: Replace with real implementation when domain layer is complete
-        val mockUseCase = object : UpdatePatientUseCase {
-            override suspend fun invoke(patient: com.narde.gestionaleosteopatabetto.domain.models.Patient): kotlinx.coroutines.flow.Flow<kotlin.Result<com.narde.gestionaleosteopatabetto.domain.models.Patient>> {
-                return kotlinx.coroutines.flow.flow {
-                    try {
-                        // For now, just return success with the same patient
-                        emit(kotlin.Result.success(patient))
-                    } catch (e: Exception) {
-                        emit(kotlin.Result.failure(e))
-                    }
-                }
-            }
-        }
-        
-        return mockUseCase
+    fun createEditPatientViewModel(): EditPatientViewModel {
+        val updatePatientUseCase = UpdatePatientUseCaseImpl()
+        return EditPatientViewModel(updatePatientUseCase)
     }
     
     /**
@@ -75,22 +63,6 @@ object ViewModelFactory {
 @Composable
 fun rememberAddPatientViewModel(): AddPatientViewModel {
     return androidx.compose.runtime.remember { ViewModelFactory.createAddPatientViewModel() }
-}
-
-/**
- * Composable function to get UpdatePatientUseCase with proper dependencies
- */
-@Composable
-fun rememberUpdatePatientUseCase(): UpdatePatientUseCase {
-    return androidx.compose.runtime.remember { ViewModelFactory.createUpdatePatientUseCase() }
-}
-
-/**
- * Composable function to get AddVisitViewModel with proper dependencies
- */
-@Composable
-fun rememberAddVisitViewModel(): AddVisitViewModel {
-    return androidx.compose.runtime.remember { ViewModelFactory.createAddVisitViewModel() }
 }
 
 /**
