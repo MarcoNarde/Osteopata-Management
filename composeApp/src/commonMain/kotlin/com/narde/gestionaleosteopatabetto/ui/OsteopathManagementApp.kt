@@ -37,21 +37,18 @@ fun OsteopathManagementApp() {
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showAddPatientScreen by remember { mutableStateOf(false) }
 
-    var showPatientDetailsNew by remember { mutableStateOf(false) }
-    var selectedPatientId by remember { mutableStateOf<String?>(null) }
-    var showEditPatientScreen by remember { mutableStateOf(false) }
-    var patientToEdit by remember { mutableStateOf<String?>(null) }
-    var showVisitDetails by remember { mutableStateOf(false) }
+    // Patient screens - use nullable IDs (null = not shown)
+    var patientDetailsId by remember { mutableStateOf<String?>(null) }
+    var editPatientId by remember { mutableStateOf<String?>(null) }
+    
+    // Visit screens - use nullable objects (null = not shown)
     var selectedVisit by remember { mutableStateOf<Visit?>(null) }
+    var editVisitId by remember { mutableStateOf<String?>(null) }
     var showAddVisitScreen by remember { mutableStateOf(false) }
     
     // Delete confirmation state
     var showDeleteVisitDialog by remember { mutableStateOf(false) }
     var visitToDelete by remember { mutableStateOf<Visit?>(null) }
-    
-    // Edit visit state
-    var showEditVisitScreen by remember { mutableStateOf(false) }
-    var visitToEdit by remember { mutableStateOf<Visit?>(null) }
     
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
@@ -216,7 +213,7 @@ fun OsteopathManagementApp() {
 
     // Handle different screen states
     when {
-        showVisitDetails && selectedVisit != null -> {
+        selectedVisit != null -> {
             // Find the corresponding patient
             val patient = patients.find { it.id == selectedVisit!!.idPaziente }
             if (patient != null) {
@@ -224,15 +221,11 @@ fun OsteopathManagementApp() {
                     visit = selectedVisit!!,
                     patient = patient,
                     onBackClick = {
-                        showVisitDetails = false
                         selectedVisit = null
                     },
                     onEditClick = {
-                        println("OsteopathApp: Edit button clicked - selectedVisit: $selectedVisit")
-                        showVisitDetails = false  // Hide VisitDetailsScreen first
-                        visitToEdit = selectedVisit
-                        showEditVisitScreen = true
-                        println("OsteopathApp: Edit state set - showEditVisitScreen: $showEditVisitScreen, visitToEdit: $visitToEdit")
+                        editVisitId = selectedVisit?.idVisita
+                        selectedVisit = null
                     }
                 )
             } else {
@@ -247,15 +240,11 @@ fun OsteopathManagementApp() {
                         age = 0
                     ),
                     onBackClick = {
-                        showVisitDetails = false
                         selectedVisit = null
                     },
                     onEditClick = {
-                        println("OsteopathApp: Edit button clicked - selectedVisit: $selectedVisit")
-                        showVisitDetails = false  // Hide VisitDetailsScreen first
-                        visitToEdit = selectedVisit
-                        showEditVisitScreen = true
-                        println("OsteopathApp: Edit state set - showEditVisitScreen: $showEditVisitScreen, visitToEdit: $visitToEdit")
+                        editVisitId = selectedVisit?.idVisita
+                        selectedVisit = null
                     }
                 )
             }
@@ -278,60 +267,46 @@ fun OsteopathManagementApp() {
                 }
             )
         }
-        showEditVisitScreen && visitToEdit != null -> {
-            val currentVisitToEdit = visitToEdit // Capture the value to avoid smart cast issues
-            println("OsteopathApp: Navigating to EditVisitScreen - visitToEdit: $currentVisitToEdit")
-            println("OsteopathApp: Patients list size: ${patients.size}")
-            println("OsteopathApp: Patients list: $patients")
+        editVisitId != null -> {
             EditVisitScreen(
-                visitId = currentVisitToEdit?.idVisita ?: "", // Pass visit ID instead of visit object
+                visitId = editVisitId!!,
                 patients = patients,
                 onBackClick = {
-                    showEditVisitScreen = false
-                    visitToEdit = null
+                    editVisitId = null
                 },
-                onVisitUpdated = { updatedVisit ->
-                    showEditVisitScreen = false
-                    visitToEdit = null
+                onVisitUpdated = { _ ->
+                    editVisitId = null
                     // Refresh visits list
                     coroutineScope.launch {
                         refreshVisits()
                     }
-                    println("Visit updated: $updatedVisit")
                 }
             )
         }
-        showEditPatientScreen && patientToEdit != null -> {
-            val currentPatientToEdit = patientToEdit // Capture the value to avoid smart cast issues
+        editPatientId != null -> {
             EditPatientScreen(
-                patientId = currentPatientToEdit ?: "",
+                patientId = editPatientId!!,
                 onBackClick = {
-                    showEditPatientScreen = false
-                    patientToEdit = null
+                    editPatientId = null
                 },
-                onPatientUpdated = { updatedPatient ->
-                    showEditPatientScreen = false
-                    patientToEdit = null
+                onPatientUpdated = { _ ->
+                    editPatientId = null
                     // Refresh patients list
                     coroutineScope.launch {
                         refreshPatients()
                     }
-                    println("Patient updated: $updatedPatient")
                 }
             )
         }
-        showPatientDetailsNew && selectedPatientId != null -> {
+        patientDetailsId != null -> {
             PatientDetailsScreenNew(
-                patientId = selectedPatientId!!,
+                patientId = patientDetailsId!!,
                 onBackClick = {
-                    showPatientDetailsNew = false
-                    selectedPatientId = null
+                    patientDetailsId = null
                 },
                 onEditClick = {
-                    // Navigate to EditPatientScreen
-                    patientToEdit = selectedPatientId
-                    showPatientDetailsNew = false
-                    showEditPatientScreen = true
+                    editPatientId = patientDetailsId
+                    patientDetailsId = null
                 }
             )
         }
@@ -439,8 +414,7 @@ fun OsteopathManagementApp() {
                             0 -> PatientsScreen(
                                 patients = patients,
                                 onPatientClick = { patient ->
-                                    selectedPatientId = patient.id
-                                    showPatientDetailsNew = true
+                                    patientDetailsId = patient.id
                                 },
                                 onDeletePatient = deletePatient
                             )
@@ -449,7 +423,6 @@ fun OsteopathManagementApp() {
                                 visits = visits,
                                 onVisitClick = { visit ->
                                     selectedVisit = visit
-                                    showVisitDetails = true
                                 },
                                 onDeleteVisit = { visit ->
                                     visitToDelete = visit

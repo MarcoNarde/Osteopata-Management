@@ -153,10 +153,10 @@ fun EditPatientScreen(
                                         repository?.getPatientById(patientId)?.let { updatedDbPatient ->
                                             val databaseUtils = createDatabaseUtils()
                                             val updatedUiPatient = databaseUtils.toUIPatient(updatedDbPatient)
+                                            // onPatientUpdated already handles navigation back
                                             onPatientUpdated(updatedUiPatient)
                                         }
                                     }
-                                    onBackClick()
                                 }
                             }
                         },
