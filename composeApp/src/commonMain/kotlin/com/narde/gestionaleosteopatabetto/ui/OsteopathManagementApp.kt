@@ -1,11 +1,9 @@
 package com.narde.gestionaleosteopatabetto.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Patient
@@ -54,9 +52,6 @@ fun OsteopathManagementApp() {
     // Edit visit state
     var showEditVisitScreen by remember { mutableStateOf(false) }
     var visitToEdit by remember { mutableStateOf<Visit?>(null) }
-    
-    // Toggle for testing new vs old patient details screen
-    var useNewPatientDetailsScreen by remember { mutableStateOf(true) }
     
     // Create DatabaseUtils instance
     val databaseUtils = remember { createDatabaseUtils() }
@@ -394,18 +389,6 @@ fun OsteopathManagementApp() {
                     TopAppBar(
                         title = { Text(stringResource(Res.string.app_title)) },
                         actions = {
-                            // Toggle button for testing new vs old patient details screen
-                            if (selectedTabIndex == 0) {
-                                TextButton(
-                                    onClick = { useNewPatientDetailsScreen = !useNewPatientDetailsScreen }
-                                ) {
-                                    Text(
-                                        text = if (useNewPatientDetailsScreen) "New Screen" else "Old Screen",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
                             // Simple language indicator - use LanguageSwitcher component for full functionality
                             Text(
                                 text = "Multi-language App",
@@ -456,25 +439,8 @@ fun OsteopathManagementApp() {
                             0 -> PatientsScreen(
                                 patients = patients,
                                 onPatientClick = { patient ->
-                                    if (useNewPatientDetailsScreen) {
-                                        // Use the new PatientDetailsScreenNew with ID-based navigation
-                                        selectedPatientId = patient.id
-                                        showPatientDetailsNew = true
-                                    } else {
-                                        // Find the corresponding database patient
-                                        if (isDatabaseSupported()) {
-                                            val repository = DatabaseInitializer.getPatientRepository()
-                                            if (repository != null) {
-                                                try {
-                                                    val dbPatient = repository.getPatientById(patient.id)
-                                                } catch (e: Exception) {
-                                                    println("Error loading patient details: ${e.message}")
-                                                }
-                                            }
-                                        } else {
-                                            // If database not supported, show basic details with available info
-                                        }
-                                    }
+                                    selectedPatientId = patient.id
+                                    showPatientDetailsNew = true
                                 },
                                 onDeletePatient = deletePatient
                             )
