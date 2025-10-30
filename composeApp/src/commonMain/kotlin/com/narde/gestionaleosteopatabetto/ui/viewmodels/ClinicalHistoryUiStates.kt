@@ -44,6 +44,9 @@ data class ClinicalHistoryUiState(
     // Interventions & Traumas
     val interventions: List<InterventionUiState> = emptyList(),
     
+    // Diagnostic Tests
+    val diagnosticTests: List<DiagnosticTestUiState> = emptyList(),
+    
     // UI state
     val isUpdating: Boolean = false,
     val isUpdateSuccessful: Boolean = false,
@@ -101,6 +104,19 @@ data class InterventionUiState(
     val description: String = "",
     val treatment: String = "",
     val outcome: String = "",
+    val isExpanded: Boolean = false
+)
+
+/**
+ * UI State for a single Diagnostic Test
+ */
+data class DiagnosticTestUiState(
+    val id: String = "",
+    val date: String = "",
+    val type: String = "",
+    val bodyArea: String = "",
+    val results: String = "",
+    val facility: String = "",
     val isExpanded: Boolean = false
 )
 

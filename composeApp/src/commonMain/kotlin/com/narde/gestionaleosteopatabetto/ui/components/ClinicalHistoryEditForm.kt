@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryViewModel
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryBooleanField
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.DiagnosticTestUiState
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.InterventionUiState
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
@@ -842,30 +843,290 @@ private fun getOutcomeLabel(outcome: String): String {
  */
 @Composable
 private fun DiagnosticTestsEditContent(
-    _uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
-    _viewModel: ClinicalHistoryViewModel,
+    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = stringResource(Res.string.diagnostic_tests_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        // Note: For now, diagnostic tests are managed through the view mode
-        // Future enhancement: Add dynamic list management for tests
-        OutlinedTextField(
-            value = "", // Placeholder for future implementation
-            onValueChange = { },
-            label = { Text(stringResource(Res.string.add_diagnostic_test)) },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+        // Display list of diagnostic tests
+        if (uiState.diagnosticTests.isEmpty()) {
+            Text(
+                text = stringResource(Res.string.no_tests),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
+        } else {
+            uiState.diagnosticTests.forEachIndexed { index, test ->
+                DiagnosticTestCard(
+                    test = test,
+                    index = index,
+                    viewModel = viewModel,
+                    focusManager = focusManager,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        
+        // Add new diagnostic test button
+        Button(
+            onClick = { viewModel.addDiagnosticTest() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = stringResource(Res.string.add_new_diagnostic_test)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(Res.string.add_new_diagnostic_test))
+        }
+    }
+}
+
+/**
+ * Diagnostic Test Card Component
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DiagnosticTestCard(
+    test: DiagnosticTestUiState,
+    index: Int,
+    viewModel: ClinicalHistoryViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager,
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember(test.isExpanded) { mutableStateOf(test.isExpanded) }
+    
+    Card(
+        modifier = modifier,
+        onClick = { 
+            isExpanded = !isExpanded
+            viewModel.toggleDiagnosticTestExpanded(index)
+        },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isExpanded) 
+                MaterialTheme.colorScheme.surfaceVariant 
+            else 
+                MaterialTheme.colorScheme.surface
         )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Collapsed state header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // Type badge
+                    if (test.type.isNotEmpty()) {
+                        AssistChip(
+                            onClick = { },
+                            label = {
+                                Text(
+                                    text = getDiagnosticTestTypeLabel(test.type),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        )
+                    }
+                    // Date
+                    if (test.date.isNotEmpty()) {
+                        Text(
+                            text = stringResource(Res.string.diagnostic_test_date) + ": ${test.date}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    // Body area preview
+                    if (test.bodyArea.isNotEmpty()) {
+                        Text(
+                            text = stringResource(Res.string.body_area) + ": ${test.bodyArea}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(Res.string.diagnostic_test_details),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                    }
+                }
+                
+                // Expand/Collapse icon
+                Icon(
+                    imageVector = if (isExpanded) 
+                        Icons.Default.KeyboardArrowUp 
+                    else 
+                        Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand"
+                )
+            }
+            
+            // Expanded state - full form
+            if (isExpanded) {
+                VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                // Date field
+                ItalianDateInput(
+                    value = test.date,
+                    onValueChange = { viewModel.updateDiagnosticTestField(index, "date", it) },
+                    label = stringResource(Res.string.diagnostic_test_date),
+                    placeholder = stringResource(Res.string.diagnostic_test_date_placeholder),
+                    showAge = false,
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                // Type dropdown
+                var typeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = typeExpanded,
+                    onExpandedChange = { typeExpanded = !typeExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = getDiagnosticTestTypeLabel(test.type),
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text(stringResource(Res.string.test_type)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.mri)) },
+                            onClick = {
+                                viewModel.updateDiagnosticTestField(index, "type", "RMN")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.ct_scan)) },
+                            onClick = {
+                                viewModel.updateDiagnosticTestField(index, "type", "TAC")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.x_ray)) },
+                            onClick = {
+                                viewModel.updateDiagnosticTestField(index, "type", "RX")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.ultrasound)) },
+                            onClick = {
+                                viewModel.updateDiagnosticTestField(index, "type", "ecografia")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.blood_tests)) },
+                            onClick = {
+                                viewModel.updateDiagnosticTestField(index, "type", "esami_ematochimici")
+                                typeExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.other)) },
+                            onClick = {
+                                viewModel.updateDiagnosticTestField(index, "type", "altro")
+                                typeExpanded = false
+                            }
+                        )
+                    }
+                }
+                
+                // Body area field
+                OutlinedTextField(
+                    value = test.bodyArea,
+                    onValueChange = { viewModel.updateDiagnosticTestField(index, "bodyArea", it) },
+                    label = { Text(stringResource(Res.string.body_area)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+                
+                // Results field (multiline)
+                OutlinedTextField(
+                    value = test.results,
+                    onValueChange = { viewModel.updateDiagnosticTestField(index, "results", it) },
+                    label = { Text(stringResource(Res.string.results)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+                
+                // Facility field
+                OutlinedTextField(
+                    value = test.facility,
+                    onValueChange = { viewModel.updateDiagnosticTestField(index, "facility", it) },
+                    label = { Text(stringResource(Res.string.facility)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+                
+                // Delete button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = { viewModel.deleteDiagnosticTest(index) },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(Res.string.delete_diagnostic_test),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(Res.string.delete_diagnostic_test),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Helper function to get diagnostic test type label
+ */
+private fun getDiagnosticTestTypeLabel(type: String): String {
+    return when (type) {
+        "RMN" -> "RMN"
+        "TAC" -> "TAC"
+        "RX" -> "RX"
+        "ecografia" -> "Ecografia"
+        "esami_ematochimici" -> "Esami Ematochimici"
+        "altro" -> "Altro"
+        else -> ""
     }
 }
 

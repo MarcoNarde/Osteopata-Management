@@ -80,6 +80,19 @@ class ClinicalHistoryViewModel : ViewModel() {
                     outcome = intervento.esito,
                     isExpanded = false
                 )
+            } ?: emptyList(),
+            
+            // Diagnostic Tests - Convert RealmList to List
+            diagnosticTests = storiaClinica?.esamiStrumentali?.map { esame ->
+                DiagnosticTestUiState(
+                    id = esame.id,
+                    date = esame.data,
+                    type = esame.tipo,
+                    bodyArea = esame.distretto,
+                    results = esame.risultato,
+                    facility = esame.struttura,
+                    isExpanded = false
+                )
             } ?: emptyList()
         )
         
@@ -195,6 +208,73 @@ class ClinicalHistoryViewModel : ViewModel() {
             _uiState.value = currentState.copy(
                 interventions = currentState.interventions.toMutableList().apply {
                     set(index, updatedIntervention)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Add a new diagnostic test
+     */
+    fun addDiagnosticTest() {
+        val currentState = _uiState.value
+        val newTest = DiagnosticTestUiState(
+            id = "", // Empty ID for new tests
+            isExpanded = true // Auto-expand new items for editing
+        )
+        _uiState.value = currentState.copy(
+            diagnosticTests = currentState.diagnosticTests + newTest
+        )
+    }
+    
+    /**
+     * Update a specific field of a diagnostic test
+     */
+    fun updateDiagnosticTestField(index: Int, field: String, value: String) {
+        val currentState = _uiState.value
+        if (index in currentState.diagnosticTests.indices) {
+            val test = currentState.diagnosticTests[index]
+            val updatedTest = when (field) {
+                "date" -> test.copy(date = value)
+                "type" -> test.copy(type = value)
+                "bodyArea" -> test.copy(bodyArea = value)
+                "results" -> test.copy(results = value)
+                "facility" -> test.copy(facility = value)
+                else -> test
+            }
+            _uiState.value = currentState.copy(
+                diagnosticTests = currentState.diagnosticTests.toMutableList().apply {
+                    set(index, updatedTest)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Delete a diagnostic test
+     */
+    fun deleteDiagnosticTest(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.diagnosticTests.indices) {
+            _uiState.value = currentState.copy(
+                diagnosticTests = currentState.diagnosticTests.toMutableList().apply {
+                    removeAt(index)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Toggle expand/collapse state of a diagnostic test
+     */
+    fun toggleDiagnosticTestExpanded(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.diagnosticTests.indices) {
+            val test = currentState.diagnosticTests[index]
+            val updatedTest = test.copy(isExpanded = !test.isExpanded)
+            _uiState.value = currentState.copy(
+                diagnosticTests = currentState.diagnosticTests.toMutableList().apply {
+                    set(index, updatedTest)
                 }
             )
         }
@@ -389,6 +469,25 @@ private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: St
             esito = interventionUi.outcome
         }
         existingStoriaClinica.interventiTrauma.add(intervention)
+    }
+    
+    // Update Diagnostic Tests
+    existingStoriaClinica.esamiStrumentali.clear()
+    state.diagnosticTests.forEach { testUi ->
+        val test = EsameStrumentale().apply {
+            // Generate UUID for new tests (those with empty id)
+            id = if (testUi.id.isNotEmpty()) {
+                testUi.id
+            } else {
+                "TEST${System.currentTimeMillis()}${Random.nextInt(1000)}"
+            }
+            data = testUi.date
+            tipo = testUi.type
+            distretto = testUi.bodyArea
+            risultato = testUi.results
+            struttura = testUi.facility
+        }
+        existingStoriaClinica.esamiStrumentali.add(test)
     }
 }
 

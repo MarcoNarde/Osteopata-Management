@@ -249,4 +249,11 @@
     <string name="intervention_details">Dettagli Intervento</string>
     <string name="intervention_date">Data</string>
     <string name="intervention_date_placeholder">GG-MM-AAAA</string>
+    
+    <!-- Diagnostic test actions -->
+    <string name="delete_diagnostic_test">Elimina Esame</string>
+    <string name="add_new_diagnostic_test">Aggiungi Nuovo Esame</string>
+    <string name="diagnostic_test_details">Dettagli Esame</string>
+    <string name="diagnostic_test_date">Data</string>
+    <string name="diagnostic_test_date_placeholder">GG-MM-AAAA</string>
 </resources>

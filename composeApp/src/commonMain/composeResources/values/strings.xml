@@ -250,4 +250,11 @@
     <string name="intervention_details">Intervention Details</string>
     <string name="intervention_date">Date</string>
     <string name="intervention_date_placeholder">YYYY-MM-DD</string>
+    
+    <!-- Diagnostic test actions -->
+    <string name="delete_diagnostic_test">Delete Test</string>
+    <string name="add_new_diagnostic_test">Add New Diagnostic Test</string>
+    <string name="diagnostic_test_details">Test Details</string>
+    <string name="diagnostic_test_date">Date</string>
+    <string name="diagnostic_test_date_placeholder">YYYY-MM-DD</string>
 </resources>
