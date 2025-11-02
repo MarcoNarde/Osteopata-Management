@@ -48,8 +48,8 @@ data class EditVisitState(
     val patientSearchText: String = "",
     val filteredPatients: List<Patient> = emptyList(),
     
-    // Validation state
-    val isFormValid: Boolean = false
+    // Change tracking state
+    val hasChanges: Boolean = false // Tracks if any field has been modified from original loaded data
 )
 
 /**

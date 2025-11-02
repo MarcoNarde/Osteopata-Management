@@ -10,9 +10,7 @@ import com.narde.gestionaleosteopatabetto.ui.mvi.EditVisitEvent
 import com.narde.gestionaleosteopatabetto.ui.mvi.EditVisitSideEffect
 import com.narde.gestionaleosteopatabetto.ui.mvi.EditVisitState
 import com.narde.gestionaleosteopatabetto.utils.DateUtils
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 
 /**
@@ -25,6 +23,9 @@ class EditVisitViewModel(
     private val updateVisitUseCase: UpdateVisitUseCase,
     private val getVisitUseCase: GetVisitUseCase
 ) : BaseViewModel<EditVisitEvent, EditVisitState>() {
+
+    // Store original state snapshot for change detection
+    private var originalStateSnapshot: EditVisitState? = null
 
     // Safe patients list - never null - using function for maximum safety
     private fun getSafePatients(): List<Patient> {
@@ -135,18 +136,51 @@ class EditVisitViewModel(
                                 val safePatients = getSafePatients()
                                 val selectedPatient = safePatients.find { it.id == domainVisit.idPaziente }
                                 
-                                updateState(
-                                    state.value.copy(
-                                        visit = uiVisit,
-                                        selectedPatient = selectedPatient,
-                                        visitDate = italianDate, // Use Italian format for state
-                                        osteopath = domainVisit.osteopata,
-                                        generalNotes = domainVisit.noteGenerali,
-                                        isLoading = false
-                                    )
+                                // Extract extended visit data fields
+                                val weight = domainVisit.datiVisitaCorrente?.peso?.toString() ?: ""
+                                val bmi = domainVisit.datiVisitaCorrente?.bmi?.toString() ?: ""
+                                val bloodPressure = domainVisit.datiVisitaCorrente?.pressione ?: ""
+                                val cranialIndices = domainVisit.datiVisitaCorrente?.indiciCraniali?.toString() ?: ""
+                                
+                                // Extract main reason fields
+                                val mainReason = domainVisit.motivoConsulto?.principale?.descrizione ?: ""
+                                val mainReasonOnset = domainVisit.motivoConsulto?.principale?.insorgenza ?: ""
+                                val mainReasonPain = domainVisit.motivoConsulto?.principale?.dolore ?: ""
+                                val mainReasonVas = domainVisit.motivoConsulto?.principale?.vas?.toString() ?: ""
+                                val mainReasonFactors = domainVisit.motivoConsulto?.principale?.fattori ?: ""
+                                
+                                // Extract secondary reason fields
+                                val secondaryReason = domainVisit.motivoConsulto?.secondario?.descrizione ?: ""
+                                val secondaryReasonDuration = domainVisit.motivoConsulto?.secondario?.durata ?: ""
+                                val secondaryReasonVas = domainVisit.motivoConsulto?.secondario?.vas?.toString() ?: ""
+                                
+                                // Create updated state with all loaded fields
+                                val loadedState = state.value.copy(
+                                    visit = uiVisit,
+                                    selectedPatient = selectedPatient,
+                                    visitDate = italianDate, // Use Italian format for state
+                                    osteopath = domainVisit.osteopata,
+                                    generalNotes = domainVisit.noteGenerali,
+                                    weight = weight,
+                                    bmi = bmi,
+                                    bloodPressure = bloodPressure,
+                                    cranialIndices = cranialIndices,
+                                    mainReason = mainReason,
+                                    mainReasonOnset = mainReasonOnset,
+                                    mainReasonPain = mainReasonPain,
+                                    mainReasonVas = mainReasonVas,
+                                    mainReasonFactors = mainReasonFactors,
+                                    secondaryReason = secondaryReason,
+                                    secondaryReasonDuration = secondaryReasonDuration,
+                                    secondaryReasonVas = secondaryReasonVas,
+                                    isLoading = false,
+                                    hasChanges = false // No changes yet when first loaded
                                 )
                                 
-                                validateForm()
+                                // Store original state snapshot for change detection
+                                originalStateSnapshot = loadedState.copy()
+                                
+                                updateState(loadedState)
                             } else {
                                 updateState(
                                     state.value.copy(
@@ -234,9 +268,17 @@ class EditVisitViewModel(
                                 noteGenerali = updatedVisit?.noteGenerali ?: domainVisit.noteGenerali
                             )
                             
-                            updateState(
-                                state.value.copy(isSaving = false)
+                            // Update state and reset change tracking after successful save
+                            val currentState = state.value
+                            val updatedState = currentState.copy(
+                                isSaving = false,
+                                hasChanges = false // Reset changes flag after successful save
                             )
+                            
+                            // Update original snapshot to current state since save was successful
+                            originalStateSnapshot = updatedState.copy()
+                            
+                            updateState(updatedState)
                             
                             emitSideEffect(EditVisitSideEffect.SavingCompleted)
                             emitSideEffect(EditVisitSideEffect.VisitUpdated(uiVisit))
@@ -288,6 +330,67 @@ class EditVisitViewModel(
             println("EditVisitViewModel: - Osteopath: ${currentState.osteopath}")
             println("EditVisitViewModel: - General Notes: ${currentState.generalNotes}")
 
+            // Create datiVisitaCorrente from state if any field is provided
+            val datiVisitaCorrente = if (
+                currentState.weight.isNotBlank() ||
+                currentState.bmi.isNotBlank() ||
+                currentState.bloodPressure.isNotBlank() ||
+                currentState.cranialIndices.isNotBlank()
+            ) {
+                com.narde.gestionaleosteopatabetto.domain.models.DatiVisitaCorrente(
+                    peso = currentState.weight.toDoubleOrNull() ?: 0.0,
+                    bmi = currentState.bmi.toDoubleOrNull() ?: 0.0,
+                    pressione = currentState.bloodPressure,
+                    indiciCraniali = currentState.cranialIndices.toDoubleOrNull() ?: 0.0
+                )
+            } else {
+                null
+            }
+
+            // Create motivoPrincipale from state if any field is provided
+            val motivoPrincipale = if (
+                currentState.mainReason.isNotBlank() ||
+                currentState.mainReasonOnset.isNotBlank() ||
+                currentState.mainReasonPain.isNotBlank() ||
+                currentState.mainReasonVas.isNotBlank() ||
+                currentState.mainReasonFactors.isNotBlank()
+            ) {
+                com.narde.gestionaleosteopatabetto.domain.models.MotivoPrincipale(
+                    descrizione = currentState.mainReason,
+                    insorgenza = currentState.mainReasonOnset,
+                    dolore = currentState.mainReasonPain,
+                    vas = currentState.mainReasonVas.toIntOrNull() ?: 0,
+                    fattori = currentState.mainReasonFactors
+                )
+            } else {
+                null
+            }
+
+            // Create motivoSecondario from state if any field is provided
+            val motivoSecondario = if (
+                currentState.secondaryReason.isNotBlank() ||
+                currentState.secondaryReasonDuration.isNotBlank() ||
+                currentState.secondaryReasonVas.isNotBlank()
+            ) {
+                com.narde.gestionaleosteopatabetto.domain.models.MotivoSecondario(
+                    descrizione = currentState.secondaryReason,
+                    durata = currentState.secondaryReasonDuration,
+                    vas = currentState.secondaryReasonVas.toIntOrNull() ?: 0
+                )
+            } else {
+                null
+            }
+
+            // Create motivoConsulto if either main or secondary reason exists
+            val motivoConsulto = if (motivoPrincipale != null || motivoSecondario != null) {
+                com.narde.gestionaleosteopatabetto.domain.models.MotivoConsulto(
+                    principale = motivoPrincipale,
+                    secondario = motivoSecondario
+                )
+            } else {
+                null
+            }
+
             return DomainVisit(
                 idVisita = visit.idVisita, // Keep existing ID
                 idPaziente = currentState.selectedPatient?.id ?: visit.idPaziente,
@@ -295,116 +398,162 @@ class EditVisitViewModel(
                     ?: throw IllegalArgumentException("Invalid date format: ${currentState.visitDate}"),
                 osteopata = currentState.osteopath,
                 noteGenerali = currentState.generalNotes,
-                datiVisitaCorrente = null, // TODO: Implement when needed
-                motivoConsulto = null // TODO: Implement when needed
+                datiVisitaCorrente = datiVisitaCorrente,
+                motivoConsulto = motivoConsulto
             )
         }
 
-    private fun validateForm() {
+    // Validation removed for now - no form validation needed
+    // private fun validateForm() { ... }
+
+    /**
+     * Check if current state has any changes compared to original loaded state
+     * Compares all editable fields to detect modifications
+     */
+    private fun checkForChanges() {
         val currentState = state.value
+        val original = originalStateSnapshot
         
-        val isFormValid = currentState.selectedPatient != null && 
-                         currentState.visitDate.isNotBlank() &&
-                         currentState.osteopath.isNotBlank()
+        // If no original snapshot exists, no changes can be detected
+        if (original == null) {
+            updateState(currentState.copy(hasChanges = false))
+            return
+        }
         
-        updateState(
-            state.value.copy(isFormValid = isFormValid)
+        // Compare all editable fields
+        val hasChanges = (
+            // Basic fields
+            (currentState.selectedPatient?.id ?: "") != (original.selectedPatient?.id ?: "") ||
+            currentState.visitDate != original.visitDate ||
+            currentState.osteopath != original.osteopath ||
+            currentState.generalNotes != original.generalNotes ||
+            // Visit data fields
+            currentState.weight != original.weight ||
+            currentState.bmi != original.bmi ||
+            currentState.bloodPressure != original.bloodPressure ||
+            currentState.cranialIndices != original.cranialIndices ||
+            // Main reason fields
+            currentState.mainReason != original.mainReason ||
+            currentState.mainReasonOnset != original.mainReasonOnset ||
+            currentState.mainReasonPain != original.mainReasonPain ||
+            currentState.mainReasonVas != original.mainReasonVas ||
+            currentState.mainReasonFactors != original.mainReasonFactors ||
+            // Secondary reason fields
+            currentState.secondaryReason != original.secondaryReason ||
+            currentState.secondaryReasonDuration != original.secondaryReasonDuration ||
+            currentState.secondaryReasonVas != original.secondaryReasonVas
         )
         
-        println("EditVisitViewModel: Form validation - isValid: $isFormValid")
+        updateState(currentState.copy(hasChanges = hasChanges))
+        
+        println("EditVisitViewModel: Change detection - hasChanges: $hasChanges")
     }
 
     // Form field update handlers
+    // Each handler updates state and then checks for changes
     private fun handleUpdatePatient(patient: Patient?) {
         updateState(
             state.value.copy(selectedPatient = patient)
         )
-        validateForm()
+        checkForChanges()
     }
 
     private fun handleUpdateVisitDate(date: String) {
         updateState(
             state.value.copy(visitDate = date)
         )
-        validateForm()
+        checkForChanges()
     }
 
     private fun handleUpdateGeneralNotes(notes: String) {
         updateState(
             state.value.copy(generalNotes = notes)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateWeight(weight: String) {
         updateState(
             state.value.copy(weight = weight)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateBmi(bmi: String) {
         updateState(
             state.value.copy(bmi = bmi)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateBloodPressure(pressure: String) {
         updateState(
             state.value.copy(bloodPressure = pressure)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateCranialIndices(indices: String) {
         updateState(
             state.value.copy(cranialIndices = indices)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateMainReason(reason: String) {
         updateState(
             state.value.copy(mainReason = reason)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateMainReasonOnset(onset: String) {
         updateState(
             state.value.copy(mainReasonOnset = onset)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateMainReasonPain(pain: String) {
         updateState(
             state.value.copy(mainReasonPain = pain)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateMainReasonVas(vas: String) {
         updateState(
             state.value.copy(mainReasonVas = vas)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateMainReasonFactors(factors: String) {
         updateState(
             state.value.copy(mainReasonFactors = factors)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateSecondaryReason(reason: String) {
         updateState(
             state.value.copy(secondaryReason = reason)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateSecondaryReasonDuration(duration: String) {
         updateState(
             state.value.copy(secondaryReasonDuration = duration)
         )
+        checkForChanges()
     }
 
     private fun handleUpdateSecondaryReasonVas(vas: String) {
         updateState(
             state.value.copy(secondaryReasonVas = vas)
         )
+        checkForChanges()
     }
 
     private fun handleTogglePatientDropdown(expanded: Boolean) {

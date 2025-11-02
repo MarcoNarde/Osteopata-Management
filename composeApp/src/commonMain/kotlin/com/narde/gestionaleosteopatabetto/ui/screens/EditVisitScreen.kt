@@ -97,7 +97,7 @@ fun EditVisitScreen(
                     onClick = {
                         viewModel.sendIntent(EditVisitEvent.SaveVisit)
                     },
-                    enabled = state.isFormValid && !state.isSaving
+                    enabled = state.hasChanges && !state.isSaving
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -105,7 +105,13 @@ fun EditVisitScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (state.isSaving) "Salvando..." else "Salva Modifiche")
+                    Text(
+                        when {
+                            state.isSaving -> "Salvando..."
+                            state.hasChanges -> "Salva Modifiche"
+                            else -> "Nessuna Modifica"
+                        }
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
