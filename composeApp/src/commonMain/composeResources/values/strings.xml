@@ -257,4 +257,10 @@
     <string name="diagnostic_test_details">Test Details</string>
     <string name="diagnostic_test_date">Date</string>
     <string name="diagnostic_test_date_placeholder">YYYY-MM-DD</string>
+    
+    <!-- Medication actions -->
+    <string name="delete_medication">Delete Medication</string>
+    <string name="add_new_medication">Add New Medication</string>
+    <string name="medication_details">Medication Details</string>
+    <string name="medication_date_placeholder">YYYY-MM-DD</string>
 </resources>

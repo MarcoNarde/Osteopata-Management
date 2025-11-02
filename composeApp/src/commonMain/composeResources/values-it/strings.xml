@@ -256,4 +256,10 @@
     <string name="diagnostic_test_details">Dettagli Esame</string>
     <string name="diagnostic_test_date">Data</string>
     <string name="diagnostic_test_date_placeholder">GG-MM-AAAA</string>
+    
+    <!-- Medication actions -->
+    <string name="delete_medication">Elimina Farmaco</string>
+    <string name="add_new_medication">Aggiungi Nuovo Farmaco</string>
+    <string name="medication_details">Dettagli Farmaco</string>
+    <string name="medication_date_placeholder">GG-MM-AAAA</string>
 </resources>

@@ -93,6 +93,20 @@ class ClinicalHistoryViewModel : ViewModel() {
                     facility = esame.struttura,
                     isExpanded = false
                 )
+            } ?: emptyList(),
+            
+            // Pharmacological Therapies - Convert RealmList to List
+            pharmacologicalTherapies = storiaClinica?.terapieFarmacologiche?.map { terapia ->
+                PharmacologicalTherapyUiState(
+                    medication = terapia.farmaco,
+                    dosage = terapia.dosaggio,
+                    frequency = terapia.frequenza,
+                    startDate = terapia.dataInizio,
+                    endDate = terapia.dataFine ?: "",
+                    indication = terapia.indicazione,
+                    isOngoing = terapia.dataFine == null,
+                    isExpanded = false
+                )
             } ?: emptyList()
         )
         
@@ -275,6 +289,92 @@ class ClinicalHistoryViewModel : ViewModel() {
             _uiState.value = currentState.copy(
                 diagnosticTests = currentState.diagnosticTests.toMutableList().apply {
                     set(index, updatedTest)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Add a new pharmacological therapy
+     */
+    fun addPharmacologicalTherapy() {
+        val currentState = _uiState.value
+        val newTherapy = PharmacologicalTherapyUiState(
+            isExpanded = true // Auto-expand new items for editing
+        )
+        _uiState.value = currentState.copy(
+            pharmacologicalTherapies = currentState.pharmacologicalTherapies + newTherapy
+        )
+    }
+    
+    /**
+     * Update a specific field of a pharmacological therapy
+     */
+    fun updatePharmacologicalTherapyField(index: Int, field: String, value: String) {
+        val currentState = _uiState.value
+        if (index in currentState.pharmacologicalTherapies.indices) {
+            val therapy = currentState.pharmacologicalTherapies[index]
+            val updatedTherapy = when (field) {
+                "medication" -> therapy.copy(medication = value)
+                "dosage" -> therapy.copy(dosage = value)
+                "frequency" -> therapy.copy(frequency = value)
+                "startDate" -> therapy.copy(startDate = value)
+                "endDate" -> therapy.copy(endDate = value)
+                "indication" -> therapy.copy(indication = value)
+                else -> therapy
+            }
+            _uiState.value = currentState.copy(
+                pharmacologicalTherapies = currentState.pharmacologicalTherapies.toMutableList().apply {
+                    set(index, updatedTherapy)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Delete a pharmacological therapy
+     */
+    fun deletePharmacologicalTherapy(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.pharmacologicalTherapies.indices) {
+            _uiState.value = currentState.copy(
+                pharmacologicalTherapies = currentState.pharmacologicalTherapies.toMutableList().apply {
+                    removeAt(index)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Toggle expand/collapse state of a pharmacological therapy
+     */
+    fun togglePharmacologicalTherapyExpanded(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.pharmacologicalTherapies.indices) {
+            val therapy = currentState.pharmacologicalTherapies[index]
+            val updatedTherapy = therapy.copy(isExpanded = !therapy.isExpanded)
+            _uiState.value = currentState.copy(
+                pharmacologicalTherapies = currentState.pharmacologicalTherapies.toMutableList().apply {
+                    set(index, updatedTherapy)
+                }
+            )
+        }
+    }
+    
+    /**
+     * Toggle ongoing status of a pharmacological therapy
+     */
+    fun togglePharmacologicalTherapyOngoing(index: Int) {
+        val currentState = _uiState.value
+        if (index in currentState.pharmacologicalTherapies.indices) {
+            val therapy = currentState.pharmacologicalTherapies[index]
+            val updatedTherapy = therapy.copy(
+                isOngoing = !therapy.isOngoing,
+                endDate = if (!therapy.isOngoing) "" else therapy.endDate // Clear endDate when setting to ongoing
+            )
+            _uiState.value = currentState.copy(
+                pharmacologicalTherapies = currentState.pharmacologicalTherapies.toMutableList().apply {
+                    set(index, updatedTherapy)
                 }
             )
         }
@@ -488,6 +588,25 @@ private fun updateExistingClinicalHistoryInTransaction(existingStoriaClinica: St
             struttura = testUi.facility
         }
         existingStoriaClinica.esamiStrumentali.add(test)
+    }
+    
+    // Update Pharmacological Therapies
+    existingStoriaClinica.terapieFarmacologiche.clear()
+    state.pharmacologicalTherapies.forEach { therapyUi ->
+        val therapy = TerapiaFarmacologica().apply {
+            farmaco = therapyUi.medication
+            dosaggio = therapyUi.dosage
+            frequenza = therapyUi.frequency
+            dataInizio = therapyUi.startDate
+            // Set dataFine to null if ongoing, otherwise use endDate value
+            dataFine = if (therapyUi.isOngoing) {
+                null
+            } else {
+                if (therapyUi.endDate.isNotEmpty()) therapyUi.endDate else null
+            }
+            indicazione = therapyUi.indication
+        }
+        existingStoriaClinica.terapieFarmacologiche.add(therapy)
     }
 }
 

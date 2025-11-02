@@ -20,6 +20,7 @@ import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryBooleanField
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.DiagnosticTestUiState
 import com.narde.gestionaleosteopatabetto.ui.viewmodels.InterventionUiState
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.PharmacologicalTherapyUiState
 import org.jetbrains.compose.resources.stringResource
 import gestionaleosteopatabetto.composeapp.generated.resources.Res
 import gestionaleosteopatabetto.composeapp.generated.resources.*
@@ -499,30 +500,266 @@ private fun PediatricHistoryEditContent(
  */
 @Composable
 private fun PharmacologicalTherapiesEditContent(
-    _uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
-    _viewModel: ClinicalHistoryViewModel,
+    uiState: com.narde.gestionaleosteopatabetto.ui.viewmodels.ClinicalHistoryUiState,
+    viewModel: ClinicalHistoryViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = stringResource(Res.string.pharmacological_therapies_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        // Note: For now, pharmacological therapies are managed through the view mode
-        // Future enhancement: Add dynamic list management for medications
-        OutlinedTextField(
-            value = "", // Placeholder for future implementation
-            onValueChange = { },
-            label = { Text(stringResource(Res.string.add_medication)) },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+        // Display list of medications
+        if (uiState.pharmacologicalTherapies.isEmpty()) {
+            Text(
+                text = stringResource(Res.string.no_medications),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
+        } else {
+            uiState.pharmacologicalTherapies.forEachIndexed { index, therapy ->
+                PharmacologicalTherapyCard(
+                    therapy = therapy,
+                    index = index,
+                    viewModel = viewModel,
+                    focusManager = focusManager,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        
+        // Add new medication button
+        Button(
+            onClick = { viewModel.addPharmacologicalTherapy() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = stringResource(Res.string.add_new_medication)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(Res.string.add_new_medication))
+        }
+    }
+}
+
+/**
+ * Pharmacological Therapy Card Component
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PharmacologicalTherapyCard(
+    therapy: PharmacologicalTherapyUiState,
+    index: Int,
+    viewModel: ClinicalHistoryViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager,
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember(therapy.isExpanded) { mutableStateOf(therapy.isExpanded) }
+    
+    Card(
+        modifier = modifier,
+        onClick = { 
+            isExpanded = !isExpanded
+            viewModel.togglePharmacologicalTherapyExpanded(index)
+        },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isExpanded) 
+                MaterialTheme.colorScheme.surfaceVariant 
+            else 
+                MaterialTheme.colorScheme.surface
         )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Collapsed state header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // Medication name
+                    if (therapy.medication.isNotEmpty()) {
+                        Text(
+                            text = therapy.medication,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    // Dosage and frequency preview
+                    if (therapy.dosage.isNotEmpty() || therapy.frequency.isNotEmpty()) {
+                        Text(
+                            text = "${therapy.dosage} ${if (therapy.dosage.isNotEmpty() && therapy.frequency.isNotEmpty()) "• " else ""}${therapy.frequency}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    // Start date
+                    if (therapy.startDate.isNotEmpty()) {
+                        Text(
+                            text = stringResource(Res.string.start_date) + ": ${therapy.startDate}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    // Status indicator
+                    if (therapy.isOngoing) {
+                        AssistChip(
+                            onClick = { },
+                            label = {
+                                Text(
+                                    text = stringResource(Res.string.ongoing),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        )
+                    } else if (therapy.medication.isEmpty()) {
+                        Text(
+                            text = stringResource(Res.string.medication_details),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                    }
+                }
+                
+                // Expand/Collapse icon
+                Icon(
+                    imageVector = if (isExpanded) 
+                        Icons.Default.KeyboardArrowUp 
+                    else 
+                        Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand"
+                )
+            }
+            
+            // Expanded state - full form
+            if (isExpanded) {
+                VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                // Medication name field
+                OutlinedTextField(
+                    value = therapy.medication,
+                    onValueChange = { viewModel.updatePharmacologicalTherapyField(index, "medication", it) },
+                    label = { Text(stringResource(Res.string.medication)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+                
+                // Dosage and frequency row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = therapy.dosage,
+                        onValueChange = { viewModel.updatePharmacologicalTherapyField(index, "dosage", it) },
+                        label = { Text(stringResource(Res.string.dosage)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                        )
+                    )
+                    OutlinedTextField(
+                        value = therapy.frequency,
+                        onValueChange = { viewModel.updatePharmacologicalTherapyField(index, "frequency", it) },
+                        label = { Text(stringResource(Res.string.frequency)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                        )
+                    )
+                }
+                
+                // Start date field
+                ItalianDateInput(
+                    value = therapy.startDate,
+                    onValueChange = { viewModel.updatePharmacologicalTherapyField(index, "startDate", it) },
+                    label = stringResource(Res.string.start_date),
+                    placeholder = stringResource(Res.string.medication_date_placeholder),
+                    showAge = false,
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                // Ongoing checkbox
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = therapy.isOngoing,
+                        onCheckedChange = { 
+                            viewModel.togglePharmacologicalTherapyOngoing(index)
+                        }
+                    )
+                    Text(
+                        text = stringResource(Res.string.ongoing),
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+                
+                // End date field (shown only if not ongoing)
+                if (!therapy.isOngoing) {
+                    ItalianDateInput(
+                        value = therapy.endDate,
+                        onValueChange = { viewModel.updatePharmacologicalTherapyField(index, "endDate", it) },
+                        label = stringResource(Res.string.end_date),
+                        placeholder = stringResource(Res.string.medication_date_placeholder),
+                        showAge = false,
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                
+                // Indication field (multiline)
+                OutlinedTextField(
+                    value = therapy.indication,
+                    onValueChange = { viewModel.updatePharmacologicalTherapyField(index, "indication", it) },
+                    label = { Text(stringResource(Res.string.indication)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() }
+                    )
+                )
+                
+                // Delete button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = { viewModel.deletePharmacologicalTherapy(index) },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(Res.string.delete_medication),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(Res.string.delete_medication),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

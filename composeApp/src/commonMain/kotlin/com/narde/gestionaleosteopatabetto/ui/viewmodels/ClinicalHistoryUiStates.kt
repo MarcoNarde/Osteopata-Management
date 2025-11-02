@@ -47,6 +47,9 @@ data class ClinicalHistoryUiState(
     // Diagnostic Tests
     val diagnosticTests: List<DiagnosticTestUiState> = emptyList(),
     
+    // Pharmacological Therapies
+    val pharmacologicalTherapies: List<PharmacologicalTherapyUiState> = emptyList(),
+    
     // UI state
     val isUpdating: Boolean = false,
     val isUpdateSuccessful: Boolean = false,
@@ -117,6 +120,20 @@ data class DiagnosticTestUiState(
     val bodyArea: String = "",
     val results: String = "",
     val facility: String = "",
+    val isExpanded: Boolean = false
+)
+
+/**
+ * UI State for a single Pharmacological Therapy
+ */
+data class PharmacologicalTherapyUiState(
+    val medication: String = "",
+    val dosage: String = "",
+    val frequency: String = "",
+    val startDate: String = "",
+    val endDate: String = "",
+    val indication: String = "",
+    val isOngoing: Boolean = false,
     val isExpanded: Boolean = false
 )
 
