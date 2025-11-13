@@ -144,13 +144,73 @@ class DatabaseUtils : DatabaseUtilsInterface {
     
     /**
      * Convert database visit to UI visit
+     * Converts all fields including datiVisitaCorrente and motivoConsulto
      */
     override fun toUIVisit(databaseVisit: Visita): UIVisit {
+        // Convert datiVisitaCorrente from database model to UI model
+        val datiVisitaCorrente = databaseVisit.datiVisitaCorrente?.let { currentData ->
+            com.narde.gestionaleosteopatabetto.data.model.DatiVisitaCorrente(
+                peso = currentData.peso,
+                bmi = currentData.bmi,
+                pressione = currentData.pressione,
+                indiciCraniali = currentData.indiciCraniali
+            )
+        }
+        
+        // Convert motivoConsulto from database model to UI model
+        val motivoConsulto = databaseVisit.motivoConsulto?.let { motivo ->
+            // Convert motivoPrincipale if present
+            val principale = motivo.principale?.let { principale ->
+                com.narde.gestionaleosteopatabetto.data.model.MotivoPrincipale(
+                    descrizione = principale.descrizione,
+                    insorgenza = principale.insorgenza,
+                    dolore = principale.dolore,
+                    vas = principale.vas,
+                    fattori = principale.fattori
+                )
+            }
+            
+            // Convert motivoSecondario if present
+            val secondario = motivo.secondario?.let { secondario ->
+                com.narde.gestionaleosteopatabetto.data.model.MotivoSecondario(
+                    descrizione = secondario.descrizione,
+                    durata = secondario.durata,
+                    vas = secondario.vas
+                )
+            }
+            
+            // Create MotivoConsulto only if at least one reason exists
+            if (principale != null || secondario != null) {
+                com.narde.gestionaleosteopatabetto.data.model.MotivoConsulto(
+                    principale = principale,
+                    secondario = secondario
+                )
+            } else {
+                null
+            }
+        }
+        
+        // Convert date from ISO format to Italian format for UI display
+        val italianDate = if (databaseVisit.dataVisita.isNotEmpty()) {
+            try {
+                // Try to parse as ISO date and convert to Italian format
+                com.narde.gestionaleosteopatabetto.utils.DateUtils.convertIsoToItalianFormat(databaseVisit.dataVisita)
+                    .takeIf { it.isNotEmpty() } ?: databaseVisit.dataVisita
+            } catch (e: Exception) {
+                // If conversion fails, use original date string
+                databaseVisit.dataVisita
+            }
+        } else {
+            ""
+        }
+        
         return UIVisit(
             idVisita = databaseVisit.idVisita,
             idPaziente = databaseVisit.idPaziente,
-            dataVisita = databaseVisit.dataVisita,
+            dataVisita = italianDate,
             osteopata = databaseVisit.osteopata,
+            datiVisitaCorrente = datiVisitaCorrente,
+            motivoConsulto = motivoConsulto,
             noteGenerali = databaseVisit.noteGenerali
         )
     }

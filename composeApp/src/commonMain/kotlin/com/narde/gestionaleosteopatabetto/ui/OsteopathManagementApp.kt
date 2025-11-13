@@ -272,13 +272,48 @@ fun OsteopathManagementApp() {
                 visitId = editVisitId!!,
                 patients = patients,
                 onBackClick = {
-                    editVisitId = null
                 },
                 onVisitUpdated = { _ ->
-                    editVisitId = null
-                    // Refresh visits list
+                    val visitIdToReload = editVisitId
+                    
+                    // Refresh visits list and reload the specific visit from database
                     coroutineScope.launch {
-                        refreshVisits()
+                        try {
+                            // Refresh visits list first
+                            refreshVisits()
+                            
+                            // Reload the specific visit from database to ensure we have latest data
+                            if (visitIdToReload != null && isDatabaseSupported()) {
+                                val repository = DatabaseInitializer.getVisitRepository()
+                                if (repository != null) {
+                                    val dbVisit = repository.getVisitById(visitIdToReload)
+                                    if (dbVisit != null) {
+                                        // Convert database visit to UI visit with complete data
+                                        val reloadedVisit = databaseUtils.toUIVisit(dbVisit)
+                                        
+                                        // Update selectedVisit if it matches the updated visit
+                                        // This ensures VisitDetailsScreen shows the latest data
+                                        if (selectedVisit?.idVisita == visitIdToReload) {
+                                            selectedVisit = reloadedVisit
+                                        }
+                                        
+                                        // Also update the visits list entry if it exists
+                                        visits = visits.map { visit ->
+                                            if (visit.idVisita == visitIdToReload) {
+                                                reloadedVisit
+                                            } else {
+                                                visit
+                                            }
+                                        }
+                                        
+                                        println("OsteopathManagementApp: Reloaded visit ${reloadedVisit.idVisita} from database")
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            println("Error reloading visit after update: ${e.message}")
+                            e.printStackTrace()
+                        }
                     }
                 }
             )
@@ -422,7 +457,37 @@ fun OsteopathManagementApp() {
                             1 -> VisitsScreen(
                                 visits = visits,
                                 onVisitClick = { visit ->
-                                    selectedVisit = visit
+                                    // Reload visit from database to ensure we have latest data
+                                    coroutineScope.launch {
+                                        try {
+                                            if (isDatabaseSupported()) {
+                                                val repository = DatabaseInitializer.getVisitRepository()
+                                                if (repository != null) {
+                                                    val dbVisit = repository.getVisitById(visit.idVisita)
+                                                    if (dbVisit != null) {
+                                                        // Convert database visit to UI visit with complete data
+                                                        val reloadedVisit = databaseUtils.toUIVisit(dbVisit)
+                                                        selectedVisit = reloadedVisit
+                                                        println("OsteopathManagementApp: Reloaded visit ${reloadedVisit.idVisita} from database for details view")
+                                                    } else {
+                                                        // Fallback to visit from list if not found in database
+                                                        selectedVisit = visit
+                                                    }
+                                                } else {
+                                                    // Fallback to visit from list if repository unavailable
+                                                    selectedVisit = visit
+                                                }
+                                            } else {
+                                                // Fallback to visit from list if database not supported
+                                                selectedVisit = visit
+                                            }
+                                        } catch (e: Exception) {
+                                            println("Error reloading visit for details view: ${e.message}")
+                                            e.printStackTrace()
+                                            // Fallback to visit from list on error
+                                            selectedVisit = visit
+                                        }
+                                    }
                                 },
                                 onDeleteVisit = { visit ->
                                     visitToDelete = visit

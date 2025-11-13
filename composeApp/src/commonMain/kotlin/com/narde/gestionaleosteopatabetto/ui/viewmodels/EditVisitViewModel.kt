@@ -259,13 +259,69 @@ class EditVisitViewModel(
                             val updatedVisit = result.getOrNull()
                             println("EditVisitViewModel: Visit updated successfully - ID: ${updatedVisit?.idVisita}")
                             
-                            // Create UI visit for callback
+                            // Use updated visit if available, otherwise use domain visit
+                            val visitToUse = updatedVisit ?: domainVisit
+                            
+                            // Convert datiVisitaCorrente from domain model to UI model
+                            val datiVisitaCorrente = visitToUse.datiVisitaCorrente?.let { currentData ->
+                                com.narde.gestionaleosteopatabetto.data.model.DatiVisitaCorrente(
+                                    peso = currentData.peso,
+                                    bmi = currentData.bmi,
+                                    pressione = currentData.pressione,
+                                    indiciCraniali = currentData.indiciCraniali
+                                )
+                            }
+                            
+                            // Convert motivoConsulto from domain model to UI model
+                            val motivoConsulto = visitToUse.motivoConsulto?.let { motivo ->
+                                // Convert motivoPrincipale if present
+                                val principale = motivo.principale?.let { principale ->
+                                    com.narde.gestionaleosteopatabetto.data.model.MotivoPrincipale(
+                                        descrizione = principale.descrizione,
+                                        insorgenza = principale.insorgenza,
+                                        dolore = principale.dolore,
+                                        vas = principale.vas,
+                                        fattori = principale.fattori
+                                    )
+                                }
+                                
+                                // Convert motivoSecondario if present
+                                val secondario = motivo.secondario?.let { secondario ->
+                                    com.narde.gestionaleosteopatabetto.data.model.MotivoSecondario(
+                                        descrizione = secondario.descrizione,
+                                        durata = secondario.durata,
+                                        vas = secondario.vas
+                                    )
+                                }
+                                
+                                // Create MotivoConsulto only if at least one reason exists
+                                if (principale != null || secondario != null) {
+                                    com.narde.gestionaleosteopatabetto.data.model.MotivoConsulto(
+                                        principale = principale,
+                                        secondario = secondario
+                                    )
+                                } else {
+                                    null
+                                }
+                            }
+                            
+                            // Convert date from ISO format to Italian format for UI display
+                            val italianDate = if (visitToUse.dataVisitaString.isNotEmpty()) {
+                                DateUtils.convertIsoToItalianFormat(visitToUse.dataVisitaString)
+                                    .takeIf { it.isNotEmpty() } ?: state.value.visitDate
+                            } else {
+                                state.value.visitDate
+                            }
+                            
+                            // Create complete UI visit with all fields for callback
                             val uiVisit = Visit(
-                                idVisita = updatedVisit?.idVisita ?: domainVisit.idVisita,
-                                idPaziente = updatedVisit?.idPaziente ?: domainVisit.idPaziente,
-                                dataVisita = updatedVisit?.dataVisitaString ?: state.value.visitDate,
-                                osteopata = updatedVisit?.osteopata ?: domainVisit.osteopata,
-                                noteGenerali = updatedVisit?.noteGenerali ?: domainVisit.noteGenerali
+                                idVisita = visitToUse.idVisita,
+                                idPaziente = visitToUse.idPaziente,
+                                dataVisita = italianDate,
+                                osteopata = visitToUse.osteopata,
+                                datiVisitaCorrente = datiVisitaCorrente,
+                                motivoConsulto = motivoConsulto,
+                                noteGenerali = visitToUse.noteGenerali
                             )
                             
                             // Update state and reset change tracking after successful save
