@@ -12,18 +12,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.narde.gestionaleosteopatabetto.data.model.Visit
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.VisitDisplayItem
 
 /**
  * Card component to display visit information
- * Shows visit date, patient, and status with visual indicators
+ * Shows visit date, patient name, and status with visual indicators
+ * 
+ * Uses VisitDisplayItem to display enriched visit data with patient name
+ * Follows clean architecture by keeping presentation logic separate from data models
  */
 @Composable
 fun VisitCard(
-    visit: Visit,
+    visitDisplayItem: VisitDisplayItem,
     onClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
+    val visit = visitDisplayItem.visit
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -68,9 +72,9 @@ fun VisitCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Patient ID as the main title
+                // Patient name as the main title
                 Text(
-                    text = "Paziente: ${visit.idPaziente}",
+                    text = visitDisplayItem.patientName,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary

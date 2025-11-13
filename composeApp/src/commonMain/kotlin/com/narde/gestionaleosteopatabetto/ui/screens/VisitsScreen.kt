@@ -15,21 +15,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Visit
 import com.narde.gestionaleosteopatabetto.ui.components.VisitCard
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.VisitDisplayItem
 
 /**
  * Enhanced Visits management screen with improved UX
  * Features: Better organization, statistics, empty state, and visual hierarchy
- * @param visits List of visits to display
- * @param onVisitClick Callback when a visit is clicked
+ * 
+ * Uses VisitDisplayItem to display visits with enriched patient information
+ * Follows clean architecture by keeping UI concerns separate from data models
+ * 
+ * @param visitDisplayItems List of visit display items with patient names to display
+ * @param onVisitClick Callback when a visit is clicked (receives the Visit object)
+ * @param onDeleteVisit Callback when a visit delete is requested (receives the Visit object)
  */
 @Composable
 fun VisitsScreen(
-    visits: List<Visit>,
+    visitDisplayItems: List<VisitDisplayItem>,
     onVisitClick: (Visit) -> Unit = {},
     onDeleteVisit: (Visit) -> Unit = {}
 ) {
     // Calculate visit statistics for better overview
-    val totalVisits = visits.size
+    val totalVisits = visitDisplayItems.size
     
     Box(
         modifier = Modifier
@@ -73,7 +79,7 @@ fun VisitsScreen(
                     }
                     
                     // Statistics row
-                    if (visits.isNotEmpty()) {
+                    if (visitDisplayItems.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -99,7 +105,7 @@ fun VisitsScreen(
             }
             
             // Content area with better organization
-            if (visits.isEmpty()) {
+            if (visitDisplayItems.isEmpty()) {
                 // Enhanced empty state
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -144,11 +150,11 @@ fun VisitsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    items(visits) { visit ->
+                    items(visitDisplayItems) { visitDisplayItem ->
                         VisitCard(
-                            visit = visit,
-                            onClick = { onVisitClick(visit) },
-                            onDeleteClick = { onDeleteVisit(visit) }
+                            visitDisplayItem = visitDisplayItem,
+                            onClick = { onVisitClick(visitDisplayItem.visit) },
+                            onDeleteClick = { onDeleteVisit(visitDisplayItem.visit) }
                         )
                     }
                 }

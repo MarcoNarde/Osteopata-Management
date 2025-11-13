@@ -12,6 +12,7 @@ import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
 import com.narde.gestionaleosteopatabetto.data.database.utils.createDatabaseUtils
 import com.narde.gestionaleosteopatabetto.data.sample.SampleData
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.toDisplayItems
 import com.narde.gestionaleosteopatabetto.ui.screens.AddPatientScreen
 import com.narde.gestionaleosteopatabetto.ui.screens.PatientDetailsScreenNew
 import com.narde.gestionaleosteopatabetto.ui.screens.EditPatientScreen
@@ -454,9 +455,14 @@ fun OsteopathManagementApp() {
                                 onDeletePatient = deletePatient
                             )
 
-                            1 -> VisitsScreen(
-                                visits = visits,
-                                onVisitClick = { visit ->
+                            1 -> {
+                                // Map visits to display items with patient names
+                                // This follows clean architecture by enriching data at the composition level
+                                val visitDisplayItems = visits.toDisplayItems(patients)
+                                
+                                VisitsScreen(
+                                    visitDisplayItems = visitDisplayItems,
+                                    onVisitClick = { visit ->
                                     // Reload visit from database to ensure we have latest data
                                     coroutineScope.launch {
                                         try {
@@ -493,7 +499,8 @@ fun OsteopathManagementApp() {
                                     visitToDelete = visit
                                     showDeleteVisitDialog = true
                                 }
-                            )
+                                )
+                            }
                         }
                     }
                 }
