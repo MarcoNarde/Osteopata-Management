@@ -51,4 +51,3 @@ fun List<Visit>.toDisplayItems(patients: List<Patient>): List<VisitDisplayItem> 
         )
     }
 }
-
