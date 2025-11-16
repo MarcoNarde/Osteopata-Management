@@ -50,6 +50,21 @@ class AddVisitViewModel(
             is AddVisitEvent.ClearError -> handleClearError()
             is AddVisitEvent.LoadPatients -> handleLoadPatients()
             is AddVisitEvent.ValidateForm -> handleValidateForm()
+            
+            // Apparatus evaluation events
+            is AddVisitEvent.ToggleApparatusExpanded -> handleToggleApparatusExpanded(intent.apparatusKey, intent.expanded)
+            is AddVisitEvent.UpdateCranioField -> handleUpdateCranioField(intent.field, intent.value)
+            is AddVisitEvent.UpdateRespiratorioField -> handleUpdateRespiratorioField(intent.field, intent.value)
+            is AddVisitEvent.UpdateCardiovascolareField -> handleUpdateCardiovascolareField(intent.field, intent.value)
+            is AddVisitEvent.UpdateGastrointestinaleField -> handleUpdateGastrointestinaleField(intent.field, intent.value)
+            is AddVisitEvent.UpdateUrinarioField -> handleUpdateUrinarioField(intent.field, intent.value)
+            is AddVisitEvent.UpdateRiproduttivoField -> handleUpdateRiproduttivoField(intent.field, intent.value)
+            is AddVisitEvent.UpdatePsicoNeuroEndocrinoField -> handleUpdatePsicoNeuroEndocrinoField(intent.field, intent.value)
+            is AddVisitEvent.UpdateUnghieCuteField -> handleUpdateUnghieCuteField(intent.field, intent.value)
+            is AddVisitEvent.UpdateMetabolismoField -> handleUpdateMetabolismoField(intent.field, intent.value)
+            is AddVisitEvent.UpdateLinfonodiField -> handleUpdateLinfonodiField(intent.field, intent.value)
+            is AddVisitEvent.UpdateMuscoloScheletricoField -> handleUpdateMuscoloScheletricoField(intent.field, intent.value)
+            is AddVisitEvent.UpdateNervosoField -> handleUpdateNervosoField(intent.field, intent.value)
         }
     }
     
@@ -233,6 +248,161 @@ class AddVisitViewModel(
     fun loadPatients(patients: List<com.narde.gestionaleosteopatabetto.data.model.Patient>) {
         sendIntent(AddVisitEvent.LoadPatients)
         updateState { copy(filteredPatients = patients) }
+    }
+    
+    // Apparatus event handlers
+    private fun handleToggleApparatusExpanded(apparatusKey: String, expanded: Boolean) {
+        updateState { 
+            copy(
+                apparatusExpandedStates = apparatusExpandedStates.toMutableMap().apply {
+                    put(apparatusKey, expanded)
+                }.toMap()
+            )
+        }
+    }
+    
+    private fun handleUpdateCranioField(field: String, value: Any) {
+        updateState { 
+            copy(
+                apparatoCranio = when (field) {
+                    "problemiOlfatto" -> apparatoCranio.copy(problemiOlfatto = value as Boolean)
+                    "problemiVista" -> apparatoCranio.copy(problemiVista = value as Boolean)
+                    "problemiUdito" -> apparatoCranio.copy(problemiUdito = value as Boolean)
+                    "disturbiOcclusali" -> apparatoCranio.copy(disturbiOcclusali = value as Boolean)
+                    "malattieParodontali" -> apparatoCranio.copy(malattieParodontali = value as Boolean)
+                    "linguaDolente" -> apparatoCranio.copy(linguaDolente = value as Boolean)
+                    "cefaleaPresente" -> apparatoCranio.copy(cefaleaPresente = value as Boolean)
+                    "cefaleaIntensitaVas" -> apparatoCranio.copy(cefaleaIntensitaVas = value as String)
+                    "cefaleaFrequenza" -> apparatoCranio.copy(cefaleaFrequenza = value as String)
+                    "cefaleaDurataOre" -> apparatoCranio.copy(cefaleaDurataOre = value as String)
+                    "cefaleaTipo" -> apparatoCranio.copy(cefaleaTipo = value as String)
+                    "cefaleaLocalizzazione" -> apparatoCranio.copy(cefaleaLocalizzazione = value as List<String>)
+                    "cefaleaFattoriScatenanti" -> apparatoCranio.copy(cefaleaFattoriScatenanti = value as List<String>)
+                    "cefaleaFattoriAllevianti" -> apparatoCranio.copy(cefaleaFattoriAllevianti = value as List<String>)
+                    "emicraniaPresente" -> apparatoCranio.copy(emicraniaPresente = value as Boolean)
+                    "emicraniaConAura" -> apparatoCranio.copy(emicraniaConAura = value as Boolean)
+                    "emicraniaFrequenza" -> apparatoCranio.copy(emicraniaFrequenza = value as String)
+                    "atmProblemiPresenti" -> apparatoCranio.copy(atmProblemiPresenti = value as Boolean)
+                    "atmClickArticolare" -> apparatoCranio.copy(atmClickArticolare = value as Boolean)
+                    "atmDoloreMasticazione" -> apparatoCranio.copy(atmDoloreMasticazione = value as Boolean)
+                    "atmLimitazioneApertura" -> apparatoCranio.copy(atmLimitazioneApertura = value as Boolean)
+                    "atmSerramentoDiurno" -> apparatoCranio.copy(atmSerramentoDiurno = value as Boolean)
+                    "atmBruxismoNotturno" -> apparatoCranio.copy(atmBruxismoNotturno = value as Boolean)
+                    "atmDeviazioneMandibolare" -> apparatoCranio.copy(atmDeviazioneMandibolare = value as Boolean)
+                    "apparecchioOrtodonticoPortato" -> apparatoCranio.copy(apparecchioOrtodonticoPortato = value as Boolean)
+                    "apparecchioOrtodonticoPeriodo" -> apparatoCranio.copy(apparecchioOrtodonticoPeriodo = value as String)
+                    "apparecchioOrtodonticoEtaInizio" -> apparatoCranio.copy(apparecchioOrtodonticoEtaInizio = value as String)
+                    "apparecchioOrtodonticoEtaFine" -> apparatoCranio.copy(apparecchioOrtodonticoEtaFine = value as String)
+                    "apparecchioOrtodonticoTipo" -> apparatoCranio.copy(apparecchioOrtodonticoTipo = value as String)
+                    else -> apparatoCranio
+                }
+            )
+        }
+    }
+    
+    private fun handleUpdateRespiratorioField(field: String, value: Any) {
+        updateState { 
+            copy(
+                apparatoRespiratorio = when (field) {
+                    "dispneaPresente" -> apparatoRespiratorio.copy(dispneaPresente = value as Boolean)
+                    "dispneaSottoSforzo" -> apparatoRespiratorio.copy(dispneaSottoSforzo = value as Boolean)
+                    "dispneaARiposo" -> apparatoRespiratorio.copy(dispneaARiposo = value as Boolean)
+                    "dispneaNotturna" -> apparatoRespiratorio.copy(dispneaNotturna = value as Boolean)
+                    "oppressioneToracica" -> apparatoRespiratorio.copy(oppressioneToracica = value as Boolean)
+                    "tossePresente" -> apparatoRespiratorio.copy(tossePresente = value as Boolean)
+                    "tosseTipo" -> apparatoRespiratorio.copy(tosseTipo = value as String)
+                    "tosseNotturna" -> apparatoRespiratorio.copy(tosseNotturna = value as Boolean)
+                    "tosseCronica" -> apparatoRespiratorio.copy(tosseCronica = value as Boolean)
+                    "tosseConSangue" -> apparatoRespiratorio.copy(tosseConSangue = value as Boolean)
+                    "allergieRespiratoriePresente" -> apparatoRespiratorio.copy(allergieRespiratoriePresente = value as Boolean)
+                    "allergieRespiratorieAllergeni" -> apparatoRespiratorio.copy(allergieRespiratorieAllergeni = value as List<String>)
+                    "allergieRespiratorieStagionalita" -> apparatoRespiratorio.copy(allergieRespiratorieStagionalita = value as String)
+                    "raucedine" -> apparatoRespiratorio.copy(raucedine = value as Boolean)
+                    "congestioneNasalePresente" -> apparatoRespiratorio.copy(congestioneNasalePresente = value as Boolean)
+                    "congestioneNasaleCronica" -> apparatoRespiratorio.copy(congestioneNasaleCronica = value as Boolean)
+                    "sinusitePresente" -> apparatoRespiratorio.copy(sinusitePresente = value as Boolean)
+                    "sinusiteLocalizzazione" -> apparatoRespiratorio.copy(sinusiteLocalizzazione = value as String)
+                    "russarePresente" -> apparatoRespiratorio.copy(russarePresente = value as Boolean)
+                    "russareIntensita" -> apparatoRespiratorio.copy(russareIntensita = value as String)
+                    "russareApneeNotturne" -> apparatoRespiratorio.copy(russareApneeNotturne = value as Boolean)
+                    "brucioreGola" -> apparatoRespiratorio.copy(brucioreGola = value as Boolean)
+                    "raffreddoriFrequentiPresente" -> apparatoRespiratorio.copy(raffreddoriFrequentiPresente = value as Boolean)
+                    "raffreddoriFrequentiFrequenzaAnno" -> apparatoRespiratorio.copy(raffreddoriFrequentiFrequenzaAnno = value as String)
+                    else -> apparatoRespiratorio
+                }
+            )
+        }
+    }
+    
+    private fun handleUpdateCardiovascolareField(field: String, value: Any) {
+        // TODO: Implement field updates for cardiovascular apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateGastrointestinaleField(field: String, value: Any) {
+        // TODO: Implement field updates for gastrointestinal apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateUrinarioField(field: String, value: Any) {
+        // TODO: Implement field updates for urinary apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateRiproduttivoField(field: String, value: Any) {
+        // TODO: Implement field updates for reproductive apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdatePsicoNeuroEndocrinoField(field: String, value: Any) {
+        // TODO: Implement field updates for psycho-neuro-endocrine apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateUnghieCuteField(field: String, value: Any) {
+        // TODO: Implement field updates for nails and skin apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateMetabolismoField(field: String, value: Any) {
+        // TODO: Implement field updates for metabolism apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateLinfonodiField(field: String, value: Any) {
+        updateState { 
+            copy(
+                apparatoLinfonodi = when (field) {
+                    "anomaliePresente" -> apparatoLinfonodi.copy(anomaliePresente = value as Boolean)
+                    "anomalieLocalizzazione" -> apparatoLinfonodi.copy(anomalieLocalizzazione = value as String)
+                    "anomalieDimensione" -> apparatoLinfonodi.copy(anomalieDimensione = value as String)
+                    "anomalieMobilita" -> apparatoLinfonodi.copy(anomalieMobilita = value as Boolean)
+                    "anomalieDolenti" -> apparatoLinfonodi.copy(anomalieDolenti = value as Boolean)
+                    "anomalieConsistenza" -> apparatoLinfonodi.copy(anomalieConsistenza = value as String)
+                    "note" -> apparatoLinfonodi.copy(note = value as String)
+                    else -> apparatoLinfonodi
+                }
+            )
+        }
+    }
+    
+    private fun handleUpdateMuscoloScheletricoField(field: String, value: Any) {
+        // TODO: Implement field updates for musculoskeletal apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
+    }
+    
+    private fun handleUpdateNervosoField(field: String, value: Any) {
+        // TODO: Implement field updates for nervous apparatus
+        // For now, state remains unchanged
+        updateState { copy() }
     }
     
     /**

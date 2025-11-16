@@ -40,7 +40,35 @@ data class AddVisitState(
     val isSaving: Boolean = false,
     val errorMessage: String = "",
     val isFormValid: Boolean = false,
-    val isLoadingPatients: Boolean = false
+    val isLoadingPatients: Boolean = false,
+    
+    // Apparatus evaluation state
+    val apparatusExpandedStates: Map<String, Boolean> = mapOf(
+        "cranio" to false,
+        "respiratorio" to false,
+        "cardiovascolare" to false,
+        "gastrointestinale" to false,
+        "urinario" to false,
+        "riproduttivo" to false,
+        "psicoNeuroEndocrino" to false,
+        "unghieCute" to false,
+        "metabolismo" to false,
+        "linfonodi" to false,
+        "muscoloScheletrico" to false,
+        "nervoso" to false
+    ),
+    val apparatoCranio: ApparatoCranioState = ApparatoCranioState(),
+    val apparatoRespiratorio: ApparatoRespiratorioState = ApparatoRespiratorioState(),
+    val apparatoCardiovascolare: ApparatoCardiovascolareState = ApparatoCardiovascolareState(),
+    val apparatoGastrointestinale: ApparatoGastrointestinaleState = ApparatoGastrointestinaleState(),
+    val apparatoUrinario: ApparatoUrinarioState = ApparatoUrinarioState(),
+    val apparatoRiproduttivo: ApparatoRiproduttivoState = ApparatoRiproduttivoState(),
+    val apparatoPsicoNeuroEndocrino: ApparatoPsicoNeuroEndocrinoState = ApparatoPsicoNeuroEndocrinoState(),
+    val apparatoUnghieCute: ApparatoUnghieCuteState = ApparatoUnghieCuteState(),
+    val apparatoMetabolismo: ApparatoMetabolismoState = ApparatoMetabolismoState(),
+    val apparatoLinfonodi: ApparatoLinfonodiState = ApparatoLinfonodiState(),
+    val apparatoMuscoloScheletrico: ApparatoMuscoloScheletricoState = ApparatoMuscoloScheletricoState(),
+    val apparatoNervoso: ApparatoNervosoState = ApparatoNervosoState()
 ) {
     /**
      * Computed property for form validity
@@ -99,6 +127,45 @@ sealed class AddVisitEvent {
     
     // Form validation
     object ValidateForm : AddVisitEvent()
+    
+    // Apparatus evaluation events
+    data class ToggleApparatusExpanded(val apparatusKey: String, val expanded: Boolean) : AddVisitEvent()
+    
+    // Cranial apparatus events
+    data class UpdateCranioField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Respiratory apparatus events
+    data class UpdateRespiratorioField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Cardiovascular apparatus events
+    data class UpdateCardiovascolareField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Gastrointestinal apparatus events
+    data class UpdateGastrointestinaleField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Urinary apparatus events
+    data class UpdateUrinarioField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Reproductive apparatus events
+    data class UpdateRiproduttivoField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Psycho-neuro-endocrine apparatus events
+    data class UpdatePsicoNeuroEndocrinoField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Nails and skin apparatus events
+    data class UpdateUnghieCuteField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Metabolism apparatus events
+    data class UpdateMetabolismoField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Lymph nodes apparatus events
+    data class UpdateLinfonodiField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Musculoskeletal apparatus events
+    data class UpdateMuscoloScheletricoField(val field: String, val value: Any) : AddVisitEvent()
+    
+    // Nervous apparatus events
+    data class UpdateNervosoField(val field: String, val value: Any) : AddVisitEvent()
 }
 
 /**

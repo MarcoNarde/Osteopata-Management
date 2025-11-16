@@ -22,6 +22,14 @@ import com.narde.gestionaleosteopatabetto.ui.components.ItalianDateInput
 import com.narde.gestionaleosteopatabetto.domain.usecases.SaveVisitUseCaseImpl
 import com.narde.gestionaleosteopatabetto.domain.models.Visit as DomainVisit
 import com.narde.gestionaleosteopatabetto.utils.DateUtils
+import com.narde.gestionaleosteopatabetto.ui.components.apparati.ExpandableApparatusCard
+import com.narde.gestionaleosteopatabetto.ui.components.apparati.ApparatusMetadata
+import com.narde.gestionaleosteopatabetto.ui.components.apparati.forms.*
+import com.narde.gestionaleosteopatabetto.ui.viewmodels.AddVisitViewModel
+import com.narde.gestionaleosteopatabetto.ui.mvi.AddVisitEvent
+import com.narde.gestionaleosteopatabetto.ui.factories.ViewModelFactory
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import kotlinx.coroutines.launch
 
 /**
@@ -234,6 +242,70 @@ fun AddVisitScreen(
                 secondaryReasonPainLevel = secondaryReasonPainLevel,
                 onSecondaryReasonPainLevelChange = { secondaryReasonPainLevel = it }
             )
+            
+            // Apparatus Evaluation Section
+            Text(
+                text = "Valutazione Apparati",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            
+            // Note: This section uses ViewModel pattern for apparatus state management
+            // Create ViewModel instance using factory for proper dependency injection
+            val viewModel = remember { ViewModelFactory.createAddVisitViewModel() }
+            
+            val apparatusState by viewModel.state.collectAsState()
+            
+            // Render all 12 apparatus cards
+            ApparatusMetadata.allApparatus.forEach { apparatusInfo ->
+                val isExpanded = apparatusState.apparatusExpandedStates[apparatusInfo.key] ?: false
+                val hasData = when (apparatusInfo.key) {
+                    "cranio" -> apparatusState.apparatoCranio.hasData
+                    "respiratorio" -> apparatusState.apparatoRespiratorio.hasData
+                    "cardiovascolare" -> apparatusState.apparatoCardiovascolare.hasData
+                    "gastrointestinale" -> apparatusState.apparatoGastrointestinale.hasData
+                    "urinario" -> apparatusState.apparatoUrinario.hasData
+                    "riproduttivo" -> apparatusState.apparatoRiproduttivo.hasData
+                    "psicoNeuroEndocrino" -> apparatusState.apparatoPsicoNeuroEndocrino.hasData
+                    "unghieCute" -> apparatusState.apparatoUnghieCute.hasData
+                    "metabolismo" -> apparatusState.apparatoMetabolismo.hasData
+                    "linfonodi" -> apparatusState.apparatoLinfonodi.hasData
+                    "muscoloScheletrico" -> apparatusState.apparatoMuscoloScheletrico.hasData
+                    "nervoso" -> apparatusState.apparatoNervoso.hasData
+                    else -> false
+                }
+                
+                ExpandableApparatusCard(
+                    apparatusKey = apparatusInfo.key,
+                    apparatusName = apparatusInfo.italianName,
+                    icon = apparatusInfo.icon,
+                    isExpanded = isExpanded,
+                    hasData = hasData,
+                    onToggleExpanded = {
+                        viewModel.sendIntent(AddVisitEvent.ToggleApparatusExpanded(apparatusInfo.key, !isExpanded))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Render appropriate form based on apparatus key
+                    when (apparatusInfo.key) {
+                        "cranio" -> ApparatoCranioForm(
+                            state = apparatusState.apparatoCranio,
+                            onEvent = { event -> viewModel.sendIntent(event) }
+                        )
+                        "respiratorio" -> ApparatoRespiratorioForm(
+                            state = apparatusState.apparatoRespiratorio,
+                            onEvent = { event -> viewModel.sendIntent(event) }
+                        )
+                        "linfonodi" -> ApparatoLinfonodiForm(
+                            state = apparatusState.apparatoLinfonodi,
+                            onEvent = { event -> viewModel.sendIntent(event) }
+                        )
+                        else -> ApparatusPlaceholderForm(apparatusName = apparatusInfo.italianName)
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
         }
