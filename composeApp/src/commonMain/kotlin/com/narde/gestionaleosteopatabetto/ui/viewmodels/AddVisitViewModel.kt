@@ -7,6 +7,8 @@ import com.narde.gestionaleosteopatabetto.ui.mvi.BaseViewModel
 import com.narde.gestionaleosteopatabetto.ui.mvi.AddVisitEvent
 import com.narde.gestionaleosteopatabetto.ui.mvi.AddVisitState
 import com.narde.gestionaleosteopatabetto.ui.mvi.AddVisitSideEffect
+import com.narde.gestionaleosteopatabetto.data.database.RealmConfig
+import io.realm.kotlin.ext.realmListOf
 
 /**
  * ViewModel for Add Visit screen using MVI pattern
@@ -170,14 +172,15 @@ class AddVisitViewModel(
                 
                 println("AddVisitViewModel: Created UI visit - ID: ${uiVisit.idVisita}, Date: ${uiVisit.dataVisita}")
                 
-                // For now, save directly as basic visit data
-                // TODO: Implement full domain model conversion when domain models are finalized
-                val basicDomainVisit = createBasicDomainVisit(uiVisit)
+                // Create complete domain visit with all data including consultation reasons and apparatus data
+                val completeDomainVisit = createCompleteDomainVisit(uiVisit, currentState)
                 
-                println("AddVisitViewModel: Created domain visit - ID: ${basicDomainVisit.idVisita}")
+                println("AddVisitViewModel: Created domain visit - ID: ${completeDomainVisit.idVisita}")
+                println("AddVisitViewModel: Has motivoConsulto: ${completeDomainVisit.motivoConsulto != null}")
+                println("AddVisitViewModel: Has valutazioneApparati: ${completeDomainVisit.valutazioneApparati != null}")
                 
                 // Save the visit using the repository
-                saveVisitUseCase(basicDomainVisit).collect { result ->
+                saveVisitUseCase(completeDomainVisit).collect { result ->
                     when {
                         result.isSuccess -> {
                             val visitId = result.getOrNull()?.idVisita ?: uiVisit.idVisita
@@ -406,8 +409,221 @@ class AddVisitViewModel(
     }
     
     /**
+     * Create complete domain visit model with all data including consultation reasons and apparatus data
+     * Converts UI state to domain model
+     */
+    private fun createCompleteDomainVisit(uiVisit: com.narde.gestionaleosteopatabetto.data.model.Visit, state: AddVisitState): com.narde.gestionaleosteopatabetto.domain.models.Visit {
+        println("AddVisitViewModel: Parsing date: ${uiVisit.dataVisita}")
+        val parsedDate = com.narde.gestionaleosteopatabetto.utils.DateUtils.parseItalianDate(uiVisit.dataVisita)
+        if (parsedDate == null) {
+            println("AddVisitViewModel: Date parsing failed for: ${uiVisit.dataVisita}")
+            throw IllegalArgumentException("Invalid visit date format: ${uiVisit.dataVisita}")
+        }
+        println("AddVisitViewModel: Date parsed successfully: $parsedDate")
+        
+        // Convert consultation reason from state
+        val motivoConsulto = createMotivoConsultoFromState(state)
+        
+        // Convert current visit data from state
+        val datiVisitaCorrente = createDatiVisitaCorrenteFromState(state)
+        
+        // Convert apparatus data from state (will be created as Realm objects in use case)
+        val valutazioneApparati = createValutazioneApparatiFromState(state)
+        
+        return com.narde.gestionaleosteopatabetto.domain.models.Visit(
+            idVisita = uiVisit.idVisita,
+            idPaziente = uiVisit.idPaziente,
+            dataVisita = parsedDate,
+            osteopata = uiVisit.osteopata,
+            noteGenerali = uiVisit.noteGenerali,
+            datiVisitaCorrente = datiVisitaCorrente,
+            motivoConsulto = motivoConsulto,
+            valutazioneApparati = valutazioneApparati
+        )
+    }
+    
+    /**
+     * Create MotivoConsulto domain model from AddVisitState
+     */
+    private fun createMotivoConsultoFromState(state: AddVisitState): com.narde.gestionaleosteopatabetto.domain.models.MotivoConsulto? {
+        val principale = if (state.mainReasonDesc.isNotBlank() || 
+                             state.mainReasonOnset.isNotBlank() || 
+                             state.mainReasonPain.isNotBlank() ||
+                             state.mainReasonPainLevel.isNotBlank() ||
+                             state.mainReasonFactors.isNotBlank()) {
+            com.narde.gestionaleosteopatabetto.domain.models.MotivoPrincipale(
+                descrizione = state.mainReasonDesc,
+                insorgenza = state.mainReasonOnset,
+                dolore = state.mainReasonPain,
+                vas = state.mainReasonPainLevel.toIntOrNull() ?: 0,
+                fattori = state.mainReasonFactors
+            )
+        } else {
+            null
+        }
+        
+        val secondario = if (state.secondaryReasonDesc.isNotBlank() ||
+                             state.secondaryReasonDuration.isNotBlank() ||
+                             state.secondaryReasonPainLevel.isNotBlank()) {
+            com.narde.gestionaleosteopatabetto.domain.models.MotivoSecondario(
+                descrizione = state.secondaryReasonDesc,
+                durata = state.secondaryReasonDuration,
+                vas = state.secondaryReasonPainLevel.toIntOrNull() ?: 0
+            )
+        } else {
+            null
+        }
+        
+        return if (principale != null || secondario != null) {
+            com.narde.gestionaleosteopatabetto.domain.models.MotivoConsulto(
+                principale = principale,
+                secondario = secondario
+            )
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Create DatiVisitaCorrente domain model from AddVisitState
+     */
+    private fun createDatiVisitaCorrenteFromState(state: AddVisitState): com.narde.gestionaleosteopatabetto.domain.models.DatiVisitaCorrente? {
+        val peso = state.weight.toDoubleOrNull() ?: 0.0
+        val bmi = state.bmi.toDoubleOrNull() ?: 0.0
+        val indiciCraniali = state.cranialIndices.toDoubleOrNull() ?: 0.0
+        
+        // Only create if at least one field has data
+        return if (peso > 0.0 || bmi > 0.0 || state.bloodPressure.isNotBlank() || indiciCraniali > 0.0) {
+            com.narde.gestionaleosteopatabetto.domain.models.DatiVisitaCorrente(
+                peso = peso,
+                bmi = bmi,
+                pressione = state.bloodPressure,
+                indiciCraniali = indiciCraniali
+            )
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Create ValutazioneApparati from AddVisitState
+     * Returns null if no apparatus has data
+     * Creates Realm objects - these will be copied to Realm when the visit is saved
+     */
+    private fun createValutazioneApparatiFromState(state: AddVisitState): com.narde.gestionaleosteopatabetto.data.database.models.apparati.ValutazioneApparati? {
+        // Check if any apparatus has data
+        val hasAnyData = state.apparatoCranio.hasData ||
+                        state.apparatoRespiratorio.hasData ||
+                        state.apparatoCardiovascolare.hasData ||
+                        state.apparatoGastrointestinale.hasData ||
+                        state.apparatoUrinario.hasData ||
+                        state.apparatoRiproduttivo.hasData ||
+                        state.apparatoPsicoNeuroEndocrino.hasData ||
+                        state.apparatoUnghieCute.hasData ||
+                        state.apparatoMetabolismo.hasData ||
+                        state.apparatoLinfonodi.hasData ||
+                        state.apparatoMuscoloScheletrico.hasData ||
+                        state.apparatoNervoso.hasData
+        
+        if (!hasAnyData) {
+            return null
+        }
+        
+        // Create ValutazioneApparati Realm object within a write transaction
+        // Note: This creates the object in Realm, but it will be properly linked when the visit is saved
+        return RealmConfig.realm.writeBlocking {
+            val valutazione = com.narde.gestionaleosteopatabetto.data.database.models.apparati.ValutazioneApparati()
+            
+            // Convert cranio apparatus if it has data
+            if (state.apparatoCranio.hasData) {
+                val cranio = com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoCranio().apply {
+                    problemiOlfatto = state.apparatoCranio.problemiOlfatto
+                    problemiVista = state.apparatoCranio.problemiVista
+                    problemiUdito = state.apparatoCranio.problemiUdito
+                    disturbiOcclusali = state.apparatoCranio.disturbiOcclusali
+                    malattieParodontali = state.apparatoCranio.malattieParodontali
+                    linguaDolente = state.apparatoCranio.linguaDolente
+                    
+                    // Cefalea
+                    if (state.apparatoCranio.cefaleaPresente) {
+                        val cefalea = com.narde.gestionaleosteopatabetto.data.database.models.apparati.Cefalea().apply {
+                            presente = true
+                            intensitaVas = state.apparatoCranio.cefaleaIntensitaVas.toIntOrNull() ?: 0
+                            frequenza = state.apparatoCranio.cefaleaFrequenza
+                            durataOre = state.apparatoCranio.cefaleaDurataOre.toIntOrNull() ?: 0
+                            
+                            if (state.apparatoCranio.cefaleaTipo.isNotBlank() || 
+                                state.apparatoCranio.cefaleaLocalizzazione.isNotEmpty() ||
+                                state.apparatoCranio.cefaleaFattoriScatenanti.isNotEmpty() ||
+                                state.apparatoCranio.cefaleaFattoriAllevianti.isNotEmpty()) {
+                                caratteristiche = com.narde.gestionaleosteopatabetto.data.database.models.apparati.CaratteristicheCefalea().apply {
+                                    tipo = state.apparatoCranio.cefaleaTipo
+                                    localizzazione = realmListOf<String>()
+                                    state.apparatoCranio.cefaleaLocalizzazione.forEach { localizzazione.add(it) }
+                                    fattoriScatenanti = realmListOf<String>()
+                                    state.apparatoCranio.cefaleaFattoriScatenanti.forEach { fattoriScatenanti.add(it) }
+                                    fattoriAllevianti = realmListOf<String>()
+                                    state.apparatoCranio.cefaleaFattoriAllevianti.forEach { fattoriAllevianti.add(it) }
+                                }
+                            }
+                        }
+                        this.cefalea = cefalea
+                    }
+                    
+                    // Emicrania
+                    if (state.apparatoCranio.emicraniaPresente) {
+                        val emicrania = com.narde.gestionaleosteopatabetto.data.database.models.apparati.Emicrania().apply {
+                            presente = true
+                            conAura = state.apparatoCranio.emicraniaConAura
+                            frequenza = state.apparatoCranio.emicraniaFrequenza
+                        }
+                        this.emicrania = emicrania
+                    }
+                    
+                    // ATM
+                    if (state.apparatoCranio.atmProblemiPresenti) {
+                        val atm = com.narde.gestionaleosteopatabetto.data.database.models.apparati.ProblemiATM().apply {
+                            problemiPresenti = true
+                            sintomi = com.narde.gestionaleosteopatabetto.data.database.models.apparati.SintomiATM().apply {
+                                clickArticolare = state.apparatoCranio.atmClickArticolare
+                                doloreMasticazione = state.apparatoCranio.atmDoloreMasticazione
+                                limitazioneApertura = state.apparatoCranio.atmLimitazioneApertura
+                                serramentoDiurno = state.apparatoCranio.atmSerramentoDiurno
+                                bruxismoNotturno = state.apparatoCranio.atmBruxismoNotturno
+                                deviazioneMandibolare = state.apparatoCranio.atmDeviazioneMandibolare
+                            }
+                        }
+                        this.atm = atm
+                    }
+                    
+                    // Apparecchio Ortodontico
+                    if (state.apparatoCranio.apparecchioOrtodonticoPortato) {
+                        val apparecchio = com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparecchioOrtodontico().apply {
+                            portato = true
+                            periodo = state.apparatoCranio.apparecchioOrtodonticoPeriodo
+                            etaInizio = state.apparatoCranio.apparecchioOrtodonticoEtaInizio.toIntOrNull() ?: 0
+                            etaFine = state.apparatoCranio.apparecchioOrtodonticoEtaFine.toIntOrNull() ?: 0
+                            tipo = state.apparatoCranio.apparecchioOrtodonticoTipo
+                        }
+                        this.apparecchioOrtodontico = apparecchio
+                    }
+                }
+                valutazione.cranio = cranio
+            }
+            
+            // TODO: Convert other apparatus states similarly
+            // For now, only cranio is implemented
+            
+            // Copy to Realm and return
+            copyToRealm(valutazione)
+            valutazione
+        }
+    }
+    
+    /**
      * Create basic domain visit model with only required fields
      * Required: patient ID, visit ID, visit date, osteopath, notes
+     * @deprecated Use createCompleteDomainVisit instead
      */
     private fun createBasicDomainVisit(uiVisit: com.narde.gestionaleosteopatabetto.data.model.Visit): com.narde.gestionaleosteopatabetto.domain.models.Visit {
         println("AddVisitViewModel: Parsing date: ${uiVisit.dataVisita}")

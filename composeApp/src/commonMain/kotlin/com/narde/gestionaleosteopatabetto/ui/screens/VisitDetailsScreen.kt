@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.narde.gestionaleosteopatabetto.data.model.Visit
 import com.narde.gestionaleosteopatabetto.data.model.Patient
+import com.narde.gestionaleosteopatabetto.ui.components.apparati.ExpandableApparatusCard
+import com.narde.gestionaleosteopatabetto.ui.components.apparati.ApparatusMetadata
 
 /**
  * Visit details screen showing comprehensive visit information
@@ -97,6 +99,118 @@ fun VisitDetailsScreen(
             // General Notes Card
             if (visit.noteGenerali.isNotEmpty()) {
                 GeneralNotesCard(visit.noteGenerali)
+            }
+            
+            // Apparatus Evaluation Sections
+            // Always show apparatus sections, even if valutazioneApparati is null
+            // Debug: Check if valutazioneApparati exists
+            LaunchedEffect(visit.idVisita) {
+                println("VisitDetailsScreen: Visit ID: ${visit.idVisita}")
+                println("VisitDetailsScreen: valutazioneApparati is null: ${visit.valutazioneApparati == null}")
+                visit.valutazioneApparati?.let { valutazioneApparati ->
+                    println("VisitDetailsScreen: valutazioneApparati exists")
+                    println("VisitDetailsScreen: cranio is null: ${valutazioneApparati.cranio == null}")
+                    valutazioneApparati.cranio?.let { cranio ->
+                        println("VisitDetailsScreen: cranio exists")
+                        println("VisitDetailsScreen: problemiOlfatto: ${cranio.problemiOlfatto}")
+                        println("VisitDetailsScreen: problemiVista: ${cranio.problemiVista}")
+                    }
+                }
+            }
+            ApparatusSections(valutazione = visit.valutazioneApparati)
+        }
+    }
+}
+
+/**
+ * State to track which apparatus cards are expanded
+ */
+@Composable
+private fun rememberApparatusExpandedState(): MutableMap<String, Boolean> {
+    return remember { mutableStateMapOf() }
+}
+
+/**
+ * Display all apparatus sections
+ * Always shows all 12 apparatus cards, displaying "Nessun dato inserito" when no data exists
+ */
+@Composable
+private fun ApparatusSections(
+    valutazione: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ValutazioneApparati?
+) {
+    val expandedStates = rememberApparatusExpandedState()
+    
+    // Render all 12 apparatus cards
+    ApparatusMetadata.allApparatus.forEach { apparatusInfo ->
+        val isExpanded = expandedStates[apparatusInfo.key] ?: false
+        val apparatusData = valutazione?.let { valutazioneApparati ->
+            val data = when (apparatusInfo.key) {
+                "cranio" -> valutazioneApparati.cranio
+                "respiratorio" -> valutazioneApparati.respiratorio
+                "cardiovascolare" -> valutazioneApparati.cardiovascolare
+                "gastrointestinale" -> valutazioneApparati.gastrointestinale
+                "urinario" -> valutazioneApparati.urinario
+                "riproduttivo" -> valutazioneApparati.riproduttivo
+                "psicoNeuroEndocrino" -> valutazioneApparati.psicoNeuroEndocrino
+                "unghieCute" -> valutazioneApparati.unghieCute
+                "metabolismo" -> valutazioneApparati.metabolismo
+                "linfonodi" -> valutazioneApparati.linfonodi
+                "muscoloScheletrico" -> valutazioneApparati.muscoloScheletrico
+                "nervoso" -> valutazioneApparati.nervoso
+                else -> null
+            }
+            // Debug logging for cranio
+            if (apparatusInfo.key == "cranio") {
+                println("ApparatusSections: valutazioneApparati exists: ${valutazioneApparati != null}")
+                println("ApparatusSections: cranio data: $data")
+                (data as? com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoCranio)?.let { cranio ->
+                    println("ApparatusSections: cranio.problemiOlfatto: ${cranio.problemiOlfatto}")
+                }
+            }
+            data
+        } ?: null
+        
+        val hasData = apparatusData != null
+        // Debug logging
+        if (apparatusInfo.key == "cranio") {
+            println("ApparatusSections: hasData for cranio: $hasData")
+        }
+        
+        ExpandableApparatusCard(
+            apparatusKey = apparatusInfo.key,
+            apparatusName = apparatusInfo.italianName,
+            icon = apparatusInfo.icon,
+            isExpanded = isExpanded,
+            hasData = hasData,
+            onToggleExpanded = {
+                expandedStates[apparatusInfo.key] = !isExpanded
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (hasData) {
+                // Display apparatus-specific data
+                when (apparatusInfo.key) {
+                    "cranio" -> CranioDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoCranio)
+                    "respiratorio" -> RespiratorioDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoRespiratorio)
+                    "cardiovascolare" -> CardiovascolareDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoCardiovascolare)
+                    "gastrointestinale" -> GastrointestinaleDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoGastrointestinale)
+                    "urinario" -> UrinarioDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoUrinario)
+                    "riproduttivo" -> RiproduttivoDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoRiproduttivo)
+                    "psicoNeuroEndocrino" -> PsicoNeuroEndocrinoDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoPsicoNeuroEndocrino)
+                    "unghieCute" -> UnghieCuteDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoUnghieCute)
+                    "metabolismo" -> MetabolismoDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoMetabolismo)
+                    "linfonodi" -> LinfonodiDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoLinfonodi)
+                    "muscoloScheletrico" -> MuscoloScheletricoDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoMuscoloScheletrico)
+                    "nervoso" -> NervosoDisplay(apparatusData as com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoNervoso)
+                }
+            } else {
+                // Show "Nessun dato inserito" message
+                Text(
+                    text = "Nessun dato inserito",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
         }
     }
@@ -349,6 +463,335 @@ private fun InfoRow(
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+/**
+ * Helper function to format boolean values
+ */
+private fun formatBoolean(value: Boolean): String = if (value) "Sì" else "No"
+
+/**
+ * Helper function to format list values
+ */
+private fun formatList(list: List<String>): String {
+    return if (list.isEmpty()) {
+        "Nessuno"
+    } else {
+        list.joinToString(", ")
+    }
+}
+
+/**
+ * Display functions for each apparatus type
+ * These functions display the apparatus data in a readable format
+ */
+
+@Composable
+private fun CranioDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoCranio) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        InfoRow("Problemi Olfatto", formatBoolean(apparato.problemiOlfatto))
+        InfoRow("Problemi Vista", formatBoolean(apparato.problemiVista))
+        InfoRow("Problemi Udito", formatBoolean(apparato.problemiUdito))
+        InfoRow("Disturbi Occlusali", formatBoolean(apparato.disturbiOcclusali))
+        InfoRow("Malattie Parodontali", formatBoolean(apparato.malattieParodontali))
+        InfoRow("Lingua Dolente", formatBoolean(apparato.linguaDolente))
+        
+        apparato.cefalea?.let { cefalea ->
+            if (cefalea.presente) {
+                Text(
+                    text = "Cefalea",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Intensità VAS", cefalea.intensitaVas.toString())
+                InfoRow("Frequenza", cefalea.frequenza)
+                InfoRow("Durata (ore)", cefalea.durataOre.toString())
+                cefalea.caratteristiche?.let { car ->
+                    InfoRow("Tipo", car.tipo)
+                    InfoRow("Localizzazione", formatList(car.localizzazione.toList()))
+                    InfoRow("Fattori Scatenanti", formatList(car.fattoriScatenanti.toList()))
+                    InfoRow("Fattori Allevianti", formatList(car.fattoriAllevianti.toList()))
+                }
+            }
+        }
+        
+        apparato.emicrania?.let { emicrania ->
+            if (emicrania.presente) {
+                Text(
+                    text = "Emicrania",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Con Aura", formatBoolean(emicrania.conAura))
+                InfoRow("Frequenza", emicrania.frequenza)
+            }
+        }
+        
+        apparato.atm?.let { atm ->
+            if (atm.problemiPresenti) {
+                Text(
+                    text = "Problemi ATM",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                atm.sintomi?.let { sintomi ->
+                    InfoRow("Click Articolare", formatBoolean(sintomi.clickArticolare))
+                    InfoRow("Dolore Masticazione", formatBoolean(sintomi.doloreMasticazione))
+                    InfoRow("Limitazione Apertura", formatBoolean(sintomi.limitazioneApertura))
+                    InfoRow("Serramento Diurno", formatBoolean(sintomi.serramentoDiurno))
+                    InfoRow("Bruxismo Notturno", formatBoolean(sintomi.bruxismoNotturno))
+                    InfoRow("Deviazione Mandibolare", formatBoolean(sintomi.deviazioneMandibolare))
+                }
+            }
+        }
+        
+        apparato.apparecchioOrtodontico?.let { apparecchio ->
+            if (apparecchio.portato) {
+                Text(
+                    text = "Apparecchio Ortodontico",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Periodo", apparecchio.periodo)
+                InfoRow("Età Inizio", apparecchio.etaInizio.toString())
+                InfoRow("Età Fine", apparecchio.etaFine.toString())
+                InfoRow("Durata (anni)", apparecchio.durataAnni.toString())
+                InfoRow("Tipo", apparecchio.tipo)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RespiratorioDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoRespiratorio) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        InfoRow("Oppressione Toracica", formatBoolean(apparato.oppressioneToracica))
+        InfoRow("Raucedine", formatBoolean(apparato.raucedine))
+        InfoRow("Bruciore Gola", formatBoolean(apparato.brucioreGola))
+        
+        apparato.dispnea?.let { dispnea ->
+            if (dispnea.presente) {
+                Text(
+                    text = "Dispnea",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Sotto Sforzo", formatBoolean(dispnea.sottoSforzo))
+                InfoRow("A Riposo", formatBoolean(dispnea.aRiposo))
+                InfoRow("Notturna", formatBoolean(dispnea.notturna))
+            }
+        }
+        
+        apparato.tosse?.let { tosse ->
+            if (tosse.presente) {
+                Text(
+                    text = "Tosse",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Tipo", tosse.tipo)
+                InfoRow("Notturna", formatBoolean(tosse.notturna))
+                InfoRow("Cronica", formatBoolean(tosse.cronica))
+                InfoRow("Con Sangue", formatBoolean(tosse.conSangue))
+            }
+        }
+        
+        apparato.allergieRespiratorie?.let { allergie ->
+            if (allergie.presente) {
+                Text(
+                    text = "Allergie Respiratorie",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Allergeni", formatList(allergie.allergeni.toList()))
+                InfoRow("Stagionalità", allergie.stagionalita)
+                InfoRow("Sintomi", formatList(allergie.sintomi.toList()))
+                InfoRow("Terapia", allergie.terapia)
+            }
+        }
+        
+        apparato.congestioneNasale?.let { congestione ->
+            if (congestione.presente) {
+                Text(
+                    text = "Congestione Nasale",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Cronica", formatBoolean(congestione.cronica))
+                InfoRow("Stagionale", formatBoolean(congestione.stagionale))
+                InfoRow("Monolaterale", formatBoolean(congestione.monolaterale))
+            }
+        }
+        
+        apparato.sinusite?.let { sinusite ->
+            if (sinusite.presente) {
+                Text(
+                    text = "Sinusite",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Ricorrente", formatBoolean(sinusite.ricorrente))
+                InfoRow("Localizzazione", sinusite.localizzazione)
+                InfoRow("Cronica", formatBoolean(sinusite.cronica))
+            }
+        }
+        
+        apparato.russare?.let { russare ->
+            if (russare.presente) {
+                Text(
+                    text = "Russare",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Intensità", russare.intensita)
+                InfoRow("Frequenza", russare.frequenza)
+                InfoRow("Disturba Sonno", formatBoolean(russare.disturbaSonno))
+                InfoRow("Apnee Notturne", formatBoolean(russare.apneeNotturne))
+            }
+        }
+        
+        apparato.raffreddoriFrequenti?.let { raffreddori ->
+            if (raffreddori.presente) {
+                Text(
+                    text = "Raffreddori Frequenti",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Frequenza/Anno", raffreddori.frequenzaAnno.toString())
+            }
+        }
+    }
+}
+
+@Composable
+private fun CardiovascolareDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoCardiovascolare) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for cardiovascular apparatus
+        // This is a placeholder - implement based on ApparatoCardiovascolare structure
+        Text(
+            text = "Dati cardiovascolari disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun GastrointestinaleDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoGastrointestinale) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for gastrointestinal apparatus
+        // This is a placeholder - implement based on ApparatoGastrointestinale structure
+        Text(
+            text = "Dati gastrointestinali disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun UrinarioDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoUrinario) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for urinary apparatus
+        // This is a placeholder - implement based on ApparatoUrinario structure
+        Text(
+            text = "Dati urinari disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun RiproduttivoDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoRiproduttivo) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for reproductive apparatus
+        // This is a placeholder - implement based on ApparatoRiproduttivo structure
+        Text(
+            text = "Dati riproduttivi disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun PsicoNeuroEndocrinoDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoPsicoNeuroEndocrino) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for psycho-neuro-endocrine apparatus
+        // This is a placeholder - implement based on ApparatoPsicoNeuroEndocrino structure
+        Text(
+            text = "Dati psico-neuro-endocrini disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun UnghieCuteDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoUnghieCute) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for nails and skin apparatus
+        // This is a placeholder - implement based on ApparatoUnghieCute structure
+        Text(
+            text = "Dati unghie e cute disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun MetabolismoDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoMetabolismo) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for metabolism apparatus
+        // This is a placeholder - implement based on ApparatoMetabolismo structure
+        Text(
+            text = "Dati metabolismo disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun LinfonodiDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoLinfonodi) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for lymph nodes apparatus
+        // This is a placeholder - implement based on ApparatoLinfonodi structure
+        Text(
+            text = "Dati linfonodi disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun MuscoloScheletricoDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoMuscoloScheletrico) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for musculoskeletal apparatus
+        // This is a placeholder - implement based on ApparatoMuscoloScheletrico structure
+        Text(
+            text = "Dati muscolo-scheletrici disponibili",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun NervosoDisplay(apparato: com.narde.gestionaleosteopatabetto.data.database.models.apparati.ApparatoNervoso) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Add display logic for nervous apparatus
+        // This is a placeholder - implement based on ApparatoNervoso structure
+        Text(
+            text = "Dati nervosi disponibili",
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }

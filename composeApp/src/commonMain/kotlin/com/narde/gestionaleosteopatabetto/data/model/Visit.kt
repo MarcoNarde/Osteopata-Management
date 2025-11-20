@@ -1,5 +1,7 @@
 package com.narde.gestionaleosteopatabetto.data.model
 
+import com.narde.gestionaleosteopatabetto.data.database.models.apparati.ValutazioneApparati
+
 /**
  * Visit data model for UI layer
  * Contains visit information for the osteopath management system
@@ -11,6 +13,7 @@ data class Visit(
     val osteopata: String = "Roberto Caeran",
     val datiVisitaCorrente: DatiVisitaCorrente? = null,
     val motivoConsulto: MotivoConsulto? = null,
+    val valutazioneApparati: ValutazioneApparati? = null,
     val noteGenerali: String = ""
 )
 

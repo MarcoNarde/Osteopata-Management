@@ -81,12 +81,21 @@ class VisitRepository : VisitRepositoryInterface {
      * Save or update a visit
      * If visit exists (same ID), it will be updated
      * If visit is new, it will be created
+     * Handles nested Realm objects (valutazioneApparati) properly
      */
     override suspend fun saveVisit(visit: Visita) {
         println("VisitRepository: Starting save for visit ID: ${visit.idVisita}")
+        println("VisitRepository: Has valutazioneApparati: ${visit.valutazioneApparati != null}")
         realm.write {
+            // copyToRealm will handle nested Realm objects (valutazioneApparati) automatically
+            // If valutazioneApparati is already a Realm object, it will be properly linked
             copyToRealm(visit, updatePolicy = io.realm.kotlin.UpdatePolicy.ALL)
             println("VisitRepository: Visit saved to Realm database - ID: ${visit.idVisita}")
+            val savedVisit = query<Visita>("idVisita == $0", visit.idVisita).first().find()
+            println("VisitRepository: Saved visit has valutazioneApparati: ${savedVisit?.valutazioneApparati != null}")
+            savedVisit?.valutazioneApparati?.cranio?.let {
+                println("VisitRepository: Saved visit has cranio: true")
+            }
         }
         println("VisitRepository: Save operation completed")
     }

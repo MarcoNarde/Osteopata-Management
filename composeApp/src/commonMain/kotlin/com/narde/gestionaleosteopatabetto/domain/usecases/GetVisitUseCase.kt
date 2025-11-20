@@ -94,7 +94,8 @@ private fun com.narde.gestionaleosteopatabetto.data.database.models.Visita.toDom
                     )
                 }
             )
-        }
+        },
+        valutazioneApparati = this.valutazioneApparati
     )
 }
 

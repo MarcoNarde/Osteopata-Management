@@ -2,6 +2,7 @@ package com.narde.gestionaleosteopatabetto.domain.usecases
 
 import com.narde.gestionaleosteopatabetto.domain.models.Visit
 import com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer
+import com.narde.gestionaleosteopatabetto.data.database.RealmConfig
 import com.narde.gestionaleosteopatabetto.data.database.isDatabaseSupported
 import com.narde.gestionaleosteopatabetto.data.database.utils.VisitValidation
 import kotlinx.coroutines.flow.Flow
@@ -107,8 +108,10 @@ class SaveVisitUseCaseImpl : SaveVisitUseCase {
 
 /**
  * Extension to convert domain Visit model to database Visit model
+ * Creates Realm objects within a write transaction
  */
 private fun Visit.toDatabaseModel(): com.narde.gestionaleosteopatabetto.data.database.models.Visita {
+    // Create visit object - Realm objects will be created within the repository's write transaction
     return com.narde.gestionaleosteopatabetto.data.database.models.Visita().apply {
         idVisita = this@toDatabaseModel.idVisita
         idPaziente = this@toDatabaseModel.idPaziente
@@ -150,6 +153,13 @@ private fun Visit.toDatabaseModel(): com.narde.gestionaleosteopatabetto.data.dat
                 }
             }
         }
+        
+        // Apparatus evaluation
+        // Note: valutazioneApparati is already a Realm object created in AddVisitViewModel
+        // When the visit is saved via copyToRealm in the repository, it will link the existing Realm object
+        // If valutazioneApparati was created in a different transaction, we need to handle it differently
+        // For now, assign it directly - copyToRealm should handle nested Realm objects
+        valutazioneApparati = this@toDatabaseModel.valutazioneApparati
     }
 }
 

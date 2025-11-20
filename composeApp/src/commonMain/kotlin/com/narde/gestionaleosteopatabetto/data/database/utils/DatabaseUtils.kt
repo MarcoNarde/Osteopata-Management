@@ -211,6 +211,7 @@ class DatabaseUtils : DatabaseUtilsInterface {
             osteopata = databaseVisit.osteopata,
             datiVisitaCorrente = datiVisitaCorrente,
             motivoConsulto = motivoConsulto,
+            valutazioneApparati = databaseVisit.valutazioneApparati,
             noteGenerali = databaseVisit.noteGenerali
         )
     }

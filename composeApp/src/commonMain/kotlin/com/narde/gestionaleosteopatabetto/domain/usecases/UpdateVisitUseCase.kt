@@ -152,6 +152,11 @@ private fun Visit.toDatabaseModel(): com.narde.gestionaleosteopatabetto.data.dat
                 }
             }
         }
+        
+        // Apparatus evaluation
+        // Note: valutazioneApparati is already a Realm object if it exists
+        // It will be properly linked when the visit is saved via copyToRealm
+        valutazioneApparati = this@toDatabaseModel.valutazioneApparati
     }
 }
 

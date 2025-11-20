@@ -47,18 +47,88 @@ fun AddVisitScreen(
     // Coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
     
-    // Save visit use case
-    val saveVisitUseCase = remember { SaveVisitUseCaseImpl() }
+    // ViewModel for state management - handles all form data including consultation reasons and apparatus
+    val viewModel = remember { ViewModelFactory.createAddVisitViewModel() }
+    val state by viewModel.state.collectAsState()
+    val sideEffects = viewModel.sideEffects
     
-    // Form state
+    // Load patients into ViewModel when patients list is available
+    LaunchedEffect(patients) {
+        viewModel.loadPatients(patients)
+    }
+    
+    // Handle side effects from ViewModel
+    LaunchedEffect(sideEffects) {
+        sideEffects.collect { sideEffect ->
+            when (sideEffect) {
+                is com.narde.gestionaleosteopatabetto.ui.mvi.AddVisitSideEffect.VisitSaved -> {
+                    println("AddVisitScreen: Visit saved via ViewModel - ID: ${sideEffect.visitId}")
+                    // Reload visit from database to get complete data with all fields
+                    coroutineScope.launch {
+                        try {
+                            // Use repository directly to get database model and convert using DatabaseUtils
+                            val repository = com.narde.gestionaleosteopatabetto.data.database.DatabaseInitializer.getVisitRepository()
+                            if (repository != null) {
+                                val databaseVisit = repository.getVisitById(sideEffect.visitId)
+                                if (databaseVisit != null) {
+                                    // Convert database model to UI model using DatabaseUtils
+                                    val databaseUtils = com.narde.gestionaleosteopatabetto.data.database.utils.DatabaseUtils()
+                                    val uiVisit = databaseUtils.toUIVisit(databaseVisit)
+                                    println("AddVisitScreen: Reloaded visit - Has motivoConsulto: ${uiVisit.motivoConsulto != null}")
+                                    println("AddVisitScreen: Reloaded visit - Has valutazioneApparati: ${uiVisit.valutazioneApparati != null}")
+                                    onVisitSaved(uiVisit)
+                                } else {
+                                    println("AddVisitScreen: Visit not found in database after save")
+                                    // Fallback: create basic UI visit from state
+                                    val uiVisit = Visit(
+                                        idVisita = sideEffect.visitId,
+                                        idPaziente = state.selectedPatient?.id ?: "",
+                                        dataVisita = state.visitDate,
+                                        osteopata = state.osteopath,
+                                        noteGenerali = state.generalNotes
+                                    )
+                                    onVisitSaved(uiVisit)
+                                }
+                            } else {
+                                println("AddVisitScreen: Repository not available")
+                                // Fallback: create basic UI visit from state
+                                val uiVisit = Visit(
+                                    idVisita = sideEffect.visitId,
+                                    idPaziente = state.selectedPatient?.id ?: "",
+                                    dataVisita = state.visitDate,
+                                    osteopata = state.osteopath,
+                                    noteGenerali = state.generalNotes
+                                )
+                                onVisitSaved(uiVisit)
+                            }
+                        } catch (e: Exception) {
+                            println("AddVisitScreen: Error loading saved visit - ${e.message}")
+                            e.printStackTrace()
+                            // Fallback: create basic UI visit from state
+                            val uiVisit = Visit(
+                                idVisita = sideEffect.visitId,
+                                idPaziente = state.selectedPatient?.id ?: "",
+                                dataVisita = state.visitDate,
+                                osteopata = state.osteopath,
+                                noteGenerali = state.generalNotes
+                            )
+                            onVisitSaved(uiVisit)
+                        }
+                    }
+                }
+                is com.narde.gestionaleosteopatabetto.ui.mvi.AddVisitSideEffect.ValidationError -> {
+                    println("AddVisitScreen: Validation error - ${sideEffect.message}")
+                }
+                else -> {}
+            }
+        }
+    }
+    
+    // Local state for UI (will sync to ViewModel)
     var selectedPatient by remember { mutableStateOf<Patient?>(null) }
     var visitDate by remember { mutableStateOf("") }
     val osteopath = "Roberto Caeran" // Fixed osteopath name - not editable
     var generalNotes by remember { mutableStateOf("") }
-    
-    // Save state
-    var isSaving by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
     
     // Patient dropdown state
     var patientDropdownExpanded by remember { mutableStateOf(false) }
@@ -80,6 +150,9 @@ fun AddVisitScreen(
     var secondaryReasonDesc by remember { mutableStateOf("") }
     var secondaryReasonDuration by remember { mutableStateOf("") }
     var secondaryReasonPainLevel by remember { mutableStateOf("") }
+    
+    // Note: Local state is synced to ViewModel only when save button is clicked
+    // This avoids infinite loops and unnecessary state updates
 
     Column(
         modifier = modifier
@@ -106,61 +179,64 @@ fun AddVisitScreen(
             actions = {
                 Button(
                     onClick = {
-                        // Save visit to database using SaveVisitUseCase
-                        coroutineScope.launch {
-                            try {
-                                isSaving = true
-
-                                println("AddVisitScreen: Starting visit save process")
-                                
-                                // Create domain visit model
-                                val domainVisit = DomainVisit(
-                                    idVisita = "VIS_" + System.currentTimeMillis(),
-                                    idPaziente = selectedPatient?.id ?: "",
-                                    dataVisita = DateUtils.parseItalianDate(visitDate) ?: throw IllegalArgumentException("Invalid date format: $visitDate"),
-                                    osteopata = osteopath,
-                                    noteGenerali = generalNotes,
-                                    datiVisitaCorrente = null,
-                                    motivoConsulto = null
-                                )
-                                
-                                println("AddVisitScreen: Created domain visit - ID: ${domainVisit.idVisita}")
-                                
-                                // Save using use case
-                                saveVisitUseCase(domainVisit).collect { result ->
-                                    when {
-                                        result.isSuccess -> {
-                                            val savedVisit = result.getOrNull()
-                                            println("AddVisitScreen: Visit saved successfully - ID: ${savedVisit?.idVisita}")
-                                            
-                                            // Create UI visit for callback
-                                            val uiVisit = Visit(
-                                                idVisita = savedVisit?.idVisita ?: domainVisit.idVisita,
-                                                idPaziente = savedVisit?.idPaziente ?: domainVisit.idPaziente,
-                                                dataVisita = savedVisit?.dataVisitaString ?: visitDate,
-                                                osteopata = savedVisit?.osteopata ?: domainVisit.osteopata,
-                                                noteGenerali = savedVisit?.noteGenerali ?: domainVisit.noteGenerali
-                                            )
-                                            
-                                            onVisitSaved(uiVisit)
-                                            isSaving = false
-                                        }
-                                        result.isFailure -> {
-                                            val error = result.exceptionOrNull()?.message ?: "Unknown error"
-                                            println("AddVisitScreen: Save failed - $error")
-                                            isSaving = false
-                                        }
-                                    }
-                                }
-                                
-                            } catch (e: Exception) {
-                                println("AddVisitScreen: Exception in save process - ${e.message}")
-                                e.printStackTrace()
-                                isSaving = false
-                            }
+                        // Sync all local state to ViewModel before saving
+                        // This ensures ViewModel has the latest values from the form
+                        println("AddVisitScreen: Syncing state to ViewModel before save")
+                        
+                        // Sync basic fields
+                        selectedPatient?.let { viewModel.sendIntent(AddVisitEvent.SelectPatient(it)) }
+                        if (visitDate != state.visitDate) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateVisitDate(visitDate))
                         }
+                        if (generalNotes != state.generalNotes) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateGeneralNotes(generalNotes))
+                        }
+                        
+                        // Sync current visit data
+                        if (weight != state.weight) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateWeight(weight))
+                        }
+                        if (bmi != state.bmi) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateBmi(bmi))
+                        }
+                        if (bloodPressure != state.bloodPressure) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateBloodPressure(bloodPressure))
+                        }
+                        if (cranialIndices != state.cranialIndices) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateCranialIndices(cranialIndices))
+                        }
+                        
+                        // Sync consultation reasons
+                        if (mainReasonDesc != state.mainReasonDesc) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateMainReasonDesc(mainReasonDesc))
+                        }
+                        if (mainReasonOnset != state.mainReasonOnset) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateMainReasonOnset(mainReasonOnset))
+                        }
+                        if (mainReasonPain != state.mainReasonPain) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateMainReasonPain(mainReasonPain))
+                        }
+                        if (mainReasonPainLevel != state.mainReasonPainLevel) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateMainReasonPainLevel(mainReasonPainLevel))
+                        }
+                        if (mainReasonFactors != state.mainReasonFactors) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateMainReasonFactors(mainReasonFactors))
+                        }
+                        if (secondaryReasonDesc != state.secondaryReasonDesc) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateSecondaryReasonDesc(secondaryReasonDesc))
+                        }
+                        if (secondaryReasonDuration != state.secondaryReasonDuration) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateSecondaryReasonDuration(secondaryReasonDuration))
+                        }
+                        if (secondaryReasonPainLevel != state.secondaryReasonPainLevel) {
+                            viewModel.sendIntent(AddVisitEvent.UpdateSecondaryReasonPainLevel(secondaryReasonPainLevel))
+                        }
+                        
+                        // Use ViewModel's save logic which handles all data including consultation reasons and apparatus
+                        println("AddVisitScreen: Triggering ViewModel save")
+                        viewModel.sendIntent(AddVisitEvent.SaveVisit)
                     },
-                    enabled = selectedPatient != null && visitDate.isNotBlank() && !isSaving
+                    enabled = selectedPatient != null && visitDate.isNotBlank() && !state.isSaving
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -168,7 +244,12 @@ fun AddVisitScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Salva")
+                    Text(
+                        when {
+                            state.isSaving -> "Salvando..."
+                            else -> "Salva"
+                        }
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -252,11 +333,9 @@ fun AddVisitScreen(
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
             )
             
-            // Note: This section uses ViewModel pattern for apparatus state management
-            // Create ViewModel instance using factory for proper dependency injection
-            val viewModel = remember { ViewModelFactory.createAddVisitViewModel() }
-            
-            val apparatusState by viewModel.state.collectAsState()
+            // Note: ViewModel is already created at the top level
+            // Use state from ViewModel for apparatus state management
+            val apparatusState = state
             
             // Render all 12 apparatus cards
             ApparatusMetadata.allApparatus.forEach { apparatusInfo ->

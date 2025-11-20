@@ -1,5 +1,6 @@
 package com.narde.gestionaleosteopatabetto.domain.models
 
+import com.narde.gestionaleosteopatabetto.data.database.models.apparati.ValutazioneApparati
 import kotlinx.datetime.LocalDate
 
 /**
@@ -14,6 +15,7 @@ data class Visit(
     val osteopata: String,
     val datiVisitaCorrente: DatiVisitaCorrente?,
     val motivoConsulto: MotivoConsulto?,
+    val valutazioneApparati: ValutazioneApparati? = null,
     val noteGenerali: String
 ) {
     val dataVisitaString: String
