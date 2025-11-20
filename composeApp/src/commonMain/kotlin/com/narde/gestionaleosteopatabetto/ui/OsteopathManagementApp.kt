@@ -273,6 +273,7 @@ fun OsteopathManagementApp() {
                 visitId = editVisitId!!,
                 patients = patients,
                 onBackClick = {
+                    editVisitId = null
                 },
                 onVisitUpdated = { _ ->
                     val visitIdToReload = editVisitId
